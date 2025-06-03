@@ -33,8 +33,8 @@ jobs:
       - name: Commit Updated Models
         id: git-commit
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --local user.email "${{ secrets.USER_EMAIL }}"
+          git config --local user.name "${{ secrets.USER_NAME }}"
 
           git add models/*
 
