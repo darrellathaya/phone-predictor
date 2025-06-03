@@ -3,7 +3,7 @@ name: Retrain Model on New Data
 on:
   push:
     paths:
-      - 'data/raw/train.csv'
+      - 'data/raw/data.csv'
 
 jobs:
   retrain-model:
@@ -18,15 +18,12 @@ jobs:
           python-version: '3.12'
 
       - name: Install Dependencies
-        run: 
+        run: |
+          pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Run Training Script
-        run: 
-          python src/train_model.py
-        
-      - name: Commit Updated Models
         env:
-          NAME: ${{ secrets.USER_NAME }}
-          EMAIL: ${{ secrets.USER_EMAIL }}
-        run: make update-branch USER_NAME=$NAME USER_EMAIL=$EMAIL
+          API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          python src/train_model.py
