@@ -32,8 +32,6 @@ jobs:
       - name: Commit Updated Models (if needed)
         id: git-commit
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
           git add models/*
           git diff-index --quiet HEAD || git commit -m "Update models after retraining"
           git push origin HEAD:main
