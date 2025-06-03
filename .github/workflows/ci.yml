@@ -21,19 +21,20 @@ jobs:
           python-version: '3.12'
 
       - name: Install Dependencies
-        run: |
-          pip install --upgrade pip
+        run: 
           pip install -r requirements.txt
 
       - name: Run Training Script
-        run: |
+        run: 
           python src/train_model.py
 
-      - name: Commit Updated Models (if needed)
-        id: git-commit
-        run: |
-          git add models/*
-          git diff-index --quiet HEAD || git commit -m "Update models after retraining"
-          git push origin HEAD:main
+      - name: Evaluation
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: make eval
+        
+      - name: Commit Updated Models
+        env:
+          NAME: ${{ secrets.USER_NAME }}
+          EMAIL: ${{ secrets.USER_EMAIL }}
+        run: make update-branch USER_NAME=$NAME USER_EMAIL=$EMAIL
