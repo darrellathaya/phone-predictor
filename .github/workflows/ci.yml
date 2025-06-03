@@ -27,3 +27,22 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
         run: |
           python src/train_model.py
+
+      - name: Commit Updated Models
+        id: git-commit
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          # Stage all model-related files
+          git add models/*
+
+          # Check if anything has changed
+          if git diff --cached --quiet; then
+            echo "No model changes detected. Skipping commit."
+          else
+            git commit -m "Auto-update models and metrics after retraining"
+            git push origin HEAD:main
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
