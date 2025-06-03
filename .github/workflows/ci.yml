@@ -27,11 +27,6 @@ jobs:
       - name: Run Training Script
         run: 
           python src/train_model.py
-
-      - name: Evaluation
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: make eval
         
       - name: Commit Updated Models
         env:
