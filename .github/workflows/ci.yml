@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -31,14 +33,11 @@ jobs:
       - name: Commit Updated Models
         id: git-commit
         run: |
-          # Set Git identity
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-          # Stage model files
           git add models/*
 
-          # Check if there are changes to commit
           if git diff --cached --exit-code; then
             echo "No model changes detected. Skipping commit."
           else
