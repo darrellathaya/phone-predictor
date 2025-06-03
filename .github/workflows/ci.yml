@@ -3,7 +3,7 @@ name: Retrain Model on New Data
 on:
   push:
     paths:
-      - 'data/raw/data.csv'
+      - 'data/raw/train.csv'
 
 jobs:
   retrain-model:
