@@ -4,9 +4,6 @@ on:
   push:
     paths:
       - 'data/raw/train.csv'
-  pull_request:
-    paths:
-      - 'data/raw/train.csv'
 
 jobs:
   retrain-model:
