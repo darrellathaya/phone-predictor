@@ -31,10 +31,14 @@ jobs:
       - name: Commit Updated Models
         id: git-commit
         run: |
-          # Stage all model-related files
+          # Set Git identity
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          # Stage model files
           git add models/*
 
-          # Check if anything has changed
+          # Check if there are changes to commit
           if git diff --cached --exit-code; then
             echo "No model changes detected. Skipping commit."
           else
