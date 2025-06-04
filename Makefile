@@ -1,12 +1,7 @@
-# Makefile
-
-.PHONY: train test commit deploy
+.PHONY: train commit push retrain
 
 train:
     python src/train_model.py
-
-test:
-    pytest tests/
 
 commit:
     git config --local user.email "action@github.com"
@@ -18,9 +13,6 @@ commit:
 
 push:
     git remote set-url origin https://x-access-token:${REPO_PAT}@github.com/${GITHUB_REPOSITORY}.git 
-    if [ "$(git rev-parse --abbrev-ref HEAD)" != "main" ]; then git checkout main; fi
-    git pull
-    git merge --ff-only HEAD@{u}
     git push origin HEAD:main
 
 retrain: train commit push
