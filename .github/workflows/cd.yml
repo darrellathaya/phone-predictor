@@ -1,37 +1,64 @@
-name: Deploy to Azure App Service
+name: Build and deploy Python app to Azure Web App - phoneclassifier
 
 on:
-  workflow_run:
-    workflows: ["Retrain Model on New Data"]
-    types:
-      - completed
-
-env:
-  AZURE_WEBAPP_NAME: current-time-service
-  AZURE_WEBAPP_PACKAGE_PATH: "./publish"
-  IMAGE_NAME: phone-classifier
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read #This is required for actions/checkout
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: docker build -t $IMAGE_NAME .
-
-      - uses: azure/login@v2
+      - name: Set up Python version
+        uses: actions/setup-python@v5
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          python-version: '3.9'
 
-      - name: Deploy to Azure Web App
+      - name: Create and start virtual environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+      
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+        
+      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
+
+      - name: Zip artifact for deployment
+        run: zip release.zip ./* -r
+
+      - name: Upload artifact for deployment jobs
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-app
+          path: |
+            release.zip
+            !venv/
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: python-app
+
+      - name: Unzip artifact for deployment
+        run: unzip release.zip
+
+      
+      - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
+        id: deploy-to-webapp
         with:
-          app-name: kv-secret-rotation-sample-appsrv-dev
-          resource-group-name: kv-secret-rotation-sample-rg-dev
-          package: .
+          app-name: 'phoneclassifier'
+          slot-name: 'Production'
+          publish-profile: ${{ secrets.__publishingprofilesecretname__ }}
