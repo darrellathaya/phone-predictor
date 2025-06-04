@@ -31,7 +31,7 @@ def train():
     y = df['price_range']
 
     le = LabelEncoder()
-    X['chipset'] = le.fit_transform(X['chipset'])
+    X.loc[:, 'chipset'] = le.fit_transform(X['chipset'])
 
     X_train, X_val, y_train, y_val = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y

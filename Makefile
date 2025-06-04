@@ -12,7 +12,7 @@ commit:
 	fi
 
 push:
-	git remote set-url origin https://x-access-token:${REPO_PAT}@github.com/${GITHUB_REPOSITORY}.git 
-	git push origin HEAD:main
+    git remote set-url origin https://x-access-token:${REPO_PAT}@github.com/${GITHUB_REPOSITORY}.git 
+    git push origin HEAD:main
 
 retrain: train commit push
