@@ -8,8 +8,12 @@ on:
 
 jobs:
   train:
+    permissions:
+      contents: write  # Grants write permission for the training job
     uses: ./.github/workflows/train.yml
 
   test:
     needs: train
+    permissions:
+      contents: write  # Needed for git auto-commit
     uses: ./.github/workflows/test.yml
