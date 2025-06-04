@@ -49,7 +49,7 @@ These instructions will help you set up the project locally and run it manually.
 
 1. Running the web app locally
    ```sh
-   uvicorn main:app.main --reload
+   uvicorn app.main:app --reload
    ```
 
 2. Train the model locally
