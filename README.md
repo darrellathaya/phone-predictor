@@ -42,6 +42,10 @@ These instructions will help you set up the project locally and run it manually.
    ```sh
    git clone https://github.com/darrellathaya/phone-predictor.git
    cd phone-predictor
+
+2. Install missing dependencies
+   ```sh
+   pip install -r requirements.txt
    
 
 <!-- USAGE EXAMPLES -->
