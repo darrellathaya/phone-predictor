@@ -1,12 +1,10 @@
 name: Deploy to Azure Container Registry (ACR)
 
 on:
-  push:
-    paths:
-      - "models/**"
-      - "Dockerfile"
-      - "requirements.txt"
-      - "app/**"
+  workflow_run:
+    workflows: ["Retrain Model on New Data"]
+    types:
+      - completed
 
 jobs:
   deploy:
