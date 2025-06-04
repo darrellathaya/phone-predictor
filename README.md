@@ -54,7 +54,7 @@ These instructions will help you set up the project locally and run it manually.
 
 2. Train the model locally
    ```sh
-   python src/train_model.py
+   python src/model.py
    ```
 
 3. Run via Github Actions
