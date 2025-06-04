@@ -1,23 +1,6 @@
-<!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a id="readme-top"></a>
-<!--
-*** Thanks for checking out the Best-README-Template. If you have a suggestion
-*** that would make this better, please fork the repo and create a pull request
-*** or simply open an issue with the tag "enhancement".
-*** Don't forget to give the project a star!
-*** Thanks again! Now go create something AMAZING! :D
--->
-
-
 
 <!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
@@ -25,43 +8,61 @@
 [![Unlicense License][license-shield]][license-url]
 [![LinkedIn][linkedin-shield]][linkedin-url]
 
-
 <!-- ABOUT THE PROJECT -->
-## About The Project
+## 📦 About The Project
 
-This project is a simulation of a simple Java-based tweet storage system, using a multifile approach with `MessagePack` storage format for hot data and `JSON Lines (.jsonl)` for cold data.
+This project is a simple **machine learning pipeline** that trains a model to predict the price range of mobile phones using structured input features. It demonstrates:
 
-The main goals of this project are to demonstrate:
-- How to store and read tweets in an efficient format
-- Managing hot and cold data based on date
-- Implementing schema evolution (add columns, rename, change types, delete columns)
-- Simulating basic social media such as timeline and follow
+- How to automate ML training using GitHub Actions
+- Committing trained models directly to the repo
+- Tracking performance metrics like accuracy and regression error
+- Modular ML code structure with versioned artifacts
 
-<!-- BUILD -->
-## Built With
+You can trigger retraining by updating the dataset (`data/raw/train.csv`) or running the GitHub Actions workflow manually.
 
-* [![Java][Java.io]][Java-url]
-* [![MessagePack][MsgPack.io]][MsgPack-url]
-* [![Jackson][Jackson.io]][Jackson-url]
+
+<!-- BUILT WITH -->
+## 🛠️ Built With
+
+* [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+* [scikit-learn](https://scikit-learn.org/)
+* [GitHub Actions](https://github.com/features/actions)
 
 
 <!-- GETTING STARTED -->
-## Getting Started
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
+## 🚀 Getting Started
+
+These instructions will help you set up the project locally and run it manually. GitHub Actions will automatically retrain the model whenever you update `train.csv`.
 
 
 <!-- INSTALLATION -->
-### Installation
-1. 
+### 📦 Installation
+
+1. Clone the repo
+   ```sh
+   git clone https://github.com/darrellathaya/phone-predictor.git
+   cd your-repo-name
    
+
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-1. Running the web app
+1. Running the web app locally
    ```sh
    uvicorn main:app.main --reload
    ```
+
+2. Train the model locally
+   ```sh
+   python src/train_model.py
+   ```
+
+3. Run via Github Actions
+   ```sh
+   a. Add new data into train.csv
+
+   b. Push the changes into your Github Repository
+
 
 <!-- DIRECTORY -->
 ## Project Directory
@@ -108,9 +109,12 @@ To get a local copy up and running follow these simple example steps.
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/darrellathaya
 [product-screenshot]: images/screenshot.png
+
 [Java.io]: https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white
-[MsgPack.io]: https://img.shields.io/badge/MessagePack-000000?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciICB3aWR0aD0iMjQiIGhlaWdodD0iMjQiPjxwYXRoIGQ9Ik0xMiAyYTkgOSAwIDEgMCAwIDE4IDkgOSAwIDAgMCAwLTE4em0xIDEzSDExdi0yaDJ2MnptMC00SDExVjZoMnY1eiIvPjwvc3ZnPg==
-[Jackson.io]: https://img.shields.io/badge/Jackson-2F3134?style=for-the-badge&logo=jackson&logoColor=white
 [Java-url]: https://www.java.com/
+
+[MsgPack.io]: https://img.shields.io/badge/MessagePack-000000?style=for-the-badge&logo=data&logoColor=white
 [MsgPack-url]: https://msgpack.org/
+
+[Jackson.io]: https://img.shields.io/badge/Jackson-2F3134?style=for-the-badge&logo=code&logoColor=white
 [Jackson-url]: https://github.com/FasterXML/jackson
