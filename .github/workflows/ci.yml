@@ -36,28 +36,9 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-      - name: Create SSH Directory
-        run: |
-          mkdir -p ~/.ssh/
-
-      - name: Set Up SSH Command
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "$HOME/.ssh/command" > ~/.ssh/command
-          echo '#!/bin/sh' > ~/.ssh/command
-          echo 'exec git credential-store get "$@" <~/.ssh/git.store' >> ~/.ssh/command
-          chmod +x ~/.ssh/command
-          git config --global core.gitProxy '"$HOME/.ssh/command"'
-
-      - name: Prepare Git Credentials
-        run: |
-          echo "url=https://github.com"  > ~/.ssh/git.store
-          echo "username=github-actions[bot]" >> ~/.ssh/git.store
-          echo "password=${{ secrets.GITHUB_TOKEN }}" >> ~/.ssh/git.store
-          chmod 600 ~/.ssh/git.store
-
       - name: Commit and Push Changes
+        env:
+          REPO_PAT: ${{ secrets.REPO_PAT }}
         run: |
           git add models/*
 
@@ -65,5 +46,6 @@ jobs:
             echo "No model changes detected. Skipping commit."
           else
             git commit -m "Auto-update models and metrics after retraining"
+            git remote set-url origin https://x-access-token:${REPO_PAT}@github.com/${GITHUB_REPOSITORY}.git 
             git push origin HEAD:main
           fi
