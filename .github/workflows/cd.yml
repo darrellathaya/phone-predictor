@@ -5,10 +5,10 @@
 name: Build and deploy Python app to Azure Web App - phoneclassifier
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+   workflow_run:
+    workflows: ["Retrain Model on New Data"]
+    types:
+      - completed
 
 jobs:
   build:
