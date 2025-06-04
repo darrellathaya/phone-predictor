@@ -1,8 +1,9 @@
 name: Retrain Model on New Data
 
 on:
-  workflow_dispatch:  # still allows manual triggering
-  workflow_call:      # allows being used via `uses:`
+   push:
+    paths:
+        - "data/**"
 
 jobs:
   train:
