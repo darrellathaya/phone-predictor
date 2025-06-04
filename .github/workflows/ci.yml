@@ -1,4 +1,3 @@
-# .github/workflows/ci.yml
 name: CI Orchestrator
 
 on:
@@ -9,11 +8,11 @@ on:
 jobs:
   train:
     permissions:
-      contents: write  # Grants write permission for the training job
+      contents: write
     uses: ./.github/workflows/train.yml
 
   test:
     needs: train
     permissions:
-      contents: write  # Needed for git auto-commit
+      contents: write
     uses: ./.github/workflows/test.yml
