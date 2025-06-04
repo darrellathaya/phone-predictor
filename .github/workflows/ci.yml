@@ -1,32 +1,33 @@
 name: Retrain Model on New Data
-
 on:
-  push:
-    paths:
-      - 'data/raw/train.csv'
+    push:
+        paths:
+            - 'data/raw/train.csv'
 
 jobs:
-  retrain-model:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    build:
+        runs-on: ubuntu-latest
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+        permissions:
+            contents: write  # Allow the job to push changes back to the repository
 
-      - name: Install Dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
 
-      - name: Run Training via Make
-        env:
-          REPO_PAT: ${{ secrets.REPO_PAT }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: |
-          make retrain
+            - name: Set up Python
+              uses: actions/setup-python@v2
+              with:
+                python-version: '3.8'
+
+            - name: Install dependencies
+              run: |
+                pip install -r requirements.txt
+
+            - name: Run training script
+              run: |
+                python src/train.py
+
+            - name: Commit and push changes
+              uses: stefanzweifel/git-auto-commit-action@v5
+    
