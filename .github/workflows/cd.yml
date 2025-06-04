@@ -1,26 +1,39 @@
-name: Deploy to Azure App Service
+name: Publish 🚀
 
 on:
+  workflow_dispatch:
   push:
-    paths:
-      - "data/**"
+    branches:
+    - main
+
+env:
+  AZURE_WEBAPP_NAME: current-time-service
+  AZURE_WEBAPP_PACKAGE_PATH: "./publish"
 
 jobs:
-  deploy:
+  publish:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Build Docker image
-        run: |
-          docker build -t fastapi-app:latest .
-
-      - name: Deploy to Azure Web App for Containers
-        uses: azure/webapps-deploy@v3
+      - uses: actions/checkout@v3
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
         with:
-          app-name: your-app-service-name      # CHANGE THIS to your actual Azure App Service name
-          slot-name: production
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: fastapi-app:latest
+          dotnet-version: '6.0.x'
+          
+      - name: Restore
+        run: dotnet restore ./CurrentTimeService.sln
+        
+      - name: Build
+        run: dotnet build ./CurrentTimeService.sln --configuration Release --no-restore
+        
+      - name: Publish
+        run: dotnet publish ./CurrentTimeService.sln --configuration Release --no-build --output '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}'
+        
+      - name: Deployment
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+          package: "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
