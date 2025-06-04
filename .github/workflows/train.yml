@@ -24,7 +24,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run training script
-        run: python src/model.py
+        run: python src/train.py
 
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5

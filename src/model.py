@@ -32,6 +32,7 @@ ALGORITHMS = {
     "gradient_boosting": GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, random_state=42),
 }
 
+# Training model function
 def train_model(df, algorithm_name):
     """
     Train a classification model on the given dataframe using the specified algorithm.
