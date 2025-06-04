@@ -3,7 +3,6 @@ name: Retrain Model on New Data
 
 on:
   workflow_dispatch:
-  workflow_call:
 
 jobs:
   train:
@@ -21,9 +20,13 @@ jobs:
           python-version: '3.8'
 
       - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Run training script
-        run: |
-          python src/train_model.py
+        run: python src/train_model.py
+
+  call-commit:
+    uses: ./.github/workflows/test.yml
+    needs: train
+    permissions:
+      contents: write
