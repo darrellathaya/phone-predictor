@@ -1,9 +1,9 @@
 # .github/workflows/train.yml
 name: Retrain Model on New Data
+
 on:
-  push:
-    paths:
-      - 'data/raw/train.csv'
+  workflow_dispatch:
+  workflow_call:
 
 jobs:
   train:

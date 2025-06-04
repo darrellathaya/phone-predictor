@@ -7,9 +7,9 @@ on:
       - 'data/raw/train.csv'
 
 jobs:
-  trigger-train:
+  train:
     uses: ./.github/workflows/train.yml
 
-  trigger-test:
-    needs: trigger-train
+  test:
+    needs: train
     uses: ./.github/workflows/test.yml
