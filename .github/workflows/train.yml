@@ -24,3 +24,9 @@ jobs:
 
       - name: Run training script
         run: python src/train_model.py
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update trained models"
+          file_pattern: "models/**"
