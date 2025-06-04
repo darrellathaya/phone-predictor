@@ -1,4 +1,4 @@
-name: Deploy FastAPI App 🚀
+name: Deploy to Azure App Service
 
 on:
   workflow_run:
