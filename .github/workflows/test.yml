@@ -2,8 +2,10 @@
 name: Commit Updated Models
 
 on:
-  workflow_dispatch:
-  workflow_call:
+    workflow_run:
+        workflows: ["Retrain Model on New Data"]
+        types:
+            - completed
 
 jobs:
   push:
