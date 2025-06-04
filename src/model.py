@@ -26,11 +26,10 @@ def convert_resolution(res_str):
     except:
         return 0
 
-# Dictionary mapping algorithm names to their corresponding sklearn/XGBoost models
+# Dictionary mapping algorithm names to their corresponding sklearn models
 ALGORITHMS = {
     "random_forest": RandomForestClassifier(n_estimators=100, random_state=42),
     "gradient_boosting": GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, random_state=42),
-    "xgboost": XGBClassifier(use_label_encoder=False, eval_metric='mlogloss', random_state=42)
 }
 
 def train_model(df, algorithm_name):
@@ -39,7 +38,7 @@ def train_model(df, algorithm_name):
     
     Args:
         df (pd.DataFrame): DataFrame containing features and target.
-        algorithm_name (str): The algorithm key to use ('random_forest', 'gradient_boosting', 'xgboost').
+        algorithm_name (str): The algorithm key to use ('random_forest', 'gradient_boosting').
     
     Returns:
         pipeline: Trained sklearn Pipeline including scaler and classifier.
