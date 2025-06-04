@@ -8,7 +8,7 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: current-time-service
-  IMAGE_NAME: fastapi-app
+  IMAGE_NAME: phone-classifier
 
 jobs:
   deploy:
@@ -19,14 +19,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.8'
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
       - name: Log in to Azure using publish profile
         uses: azure/login@v1
         with:
@@ -35,8 +27,9 @@ jobs:
       - name: Build Docker image
         run: docker build -t $IMAGE_NAME .
 
-      - name: Deploy to Azure Web App for Containers
-        uses: azure/webapps-deploy@v3
+      - name: Deployment
+        uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          images: $IMAGE_NAME
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+          package: "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
