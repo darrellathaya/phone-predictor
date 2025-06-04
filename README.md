@@ -41,7 +41,7 @@ These instructions will help you set up the project locally and run it manually.
 1. Clone the repo
    ```sh
    git clone https://github.com/darrellathaya/phone-predictor.git
-   cd your-repo-name
+   cd phone-predictor
    
 
 <!-- USAGE EXAMPLES -->
@@ -75,15 +75,18 @@ These instructions will help you set up the project locally and run it manually.
 │   └── main.py
 ├── data/
 │   └── raw/
-│       └── data.csv
+│       └── train.csv
 ├── models/
 │   ├── accuracy.txt
 │   ├── chipset_encoder.pkl
 │   ├── meta.json
-│   ├── price_range_model.pkl
+│   ├── model.pkl
 │   └── regression_metrics.txt
 ├── src/
-│   └── train_model.py
+├── _pycache_/
+│   │   ├── main.cpython-312.pyc
+│   ├── model.py
+│   ├── train.py
 ├── templates/
 │   └── index.html
 ├── Dockerfile
