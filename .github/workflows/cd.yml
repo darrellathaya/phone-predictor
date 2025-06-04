@@ -1,10 +1,9 @@
-name: Deploy to Azure Container Registry (ACR)
+name: Deploy to Azure App Service
 
 on:
-  workflow_run:
-    workflows: ["Retrain Model on New Data"]
-    types:
-      - completed
+  push:
+    paths:
+      - "data/**"
 
 jobs:
   deploy:
@@ -14,15 +13,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Log in to ACR using access keys
-        run: |
-          echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_LOGIN_SERVER }} \
-            -u "${{ secrets.ACR_USERNAME }}" --password-stdin
-
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/your-app-name:latest .
+          docker build -t fastapi-app:latest .
 
-      - name: Push Docker image to ACR
-        run: |
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/your-app-name:latest
+      - name: Deploy to Azure Web App for Containers
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: your-app-service-name      # CHANGE THIS to your actual Azure App Service name
+          slot-name: production
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          images: fastapi-app:latest
