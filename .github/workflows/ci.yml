@@ -12,7 +12,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          persist-credentials: true
           fetch-depth: 0
 
       - name: Set up Python
@@ -25,27 +24,9 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run Training Script
+      - name: Run Training via Make
         env:
           API_KEY: ${{ secrets.API_KEY }}
-        run: |
-          python src/train_model.py
-
-      - name: Configure Git Identity
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
-      - name: Commit and Push Changes
-        env:
           REPO_PAT: ${{ secrets.REPO_PAT }}
         run: |
-          git add models/*
-
-          if git diff --cached --quiet; then
-            echo "No model changes detected. Skipping commit."
-          else
-            git commit -m "Auto-update models and metrics after retraining"
-            git remote set-url origin https://x-access-token:${REPO_PAT}@github.com/${GITHUB_REPOSITORY}.git 
-            git push origin HEAD:main
-          fi
+          make retrain
