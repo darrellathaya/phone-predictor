@@ -1,33 +1,15 @@
-name: Retrain Model on New Data
+# .github/workflows/ci.yml
+name: CI Orchestrator
+
 on:
-    push:
-        paths:
-            - 'data/raw/train.csv'
+  push:
+    paths:
+      - 'data/raw/train.csv'
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
+  trigger-train:
+    uses: ./.github/workflows/train.yml
 
-        permissions:
-            contents: write  # Allow the job to push changes back to the repository
-
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v2
-
-            - name: Set up Python
-              uses: actions/setup-python@v2
-              with:
-                python-version: '3.8'
-
-            - name: Install dependencies
-              run: |
-                pip install -r requirements.txt
-
-            - name: Run training script
-              run: |
-                python src/train.py
-
-            - name: Commit and push changes
-              uses: stefanzweifel/git-auto-commit-action@v5
-    
+  trigger-test:
+    needs: trigger-train
+    uses: ./.github/workflows/test.yml
