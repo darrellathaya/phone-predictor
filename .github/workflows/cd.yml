@@ -1,39 +1,44 @@
-name: Publish 🚀
+name: Deploy to Azure App Service
 
 on:
   workflow_dispatch:
   push:
     branches:
-    - main
+      - main
 
 env:
   AZURE_WEBAPP_NAME: current-time-service
-  AZURE_WEBAPP_PACKAGE_PATH: "./publish"
+  IMAGE_NAME: fastapi-app
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          dotnet-version: '6.0.x'
-          
-      - name: Restore
-        run: dotnet restore ./CurrentTimeService.sln
-        
-      - name: Build
-        run: dotnet build ./CurrentTimeService.sln --configuration Release --no-restore
-        
-      - name: Publish
-        run: dotnet publish ./CurrentTimeService.sln --configuration Release --no-build --output '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}'
-        
-      - name: Deployment
-        uses: azure/webapps-deploy@v2
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Retrain model
+        run: python src/train.py
+
+      - name: Log in to Azure using publish profile
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+
+      - name: Build Docker image
+        run: docker build -t $IMAGE_NAME .
+
+      - name: Deploy to Azure Web App for Containers
+        uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
-          package: "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+          images: $IMAGE_NAME
