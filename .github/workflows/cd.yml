@@ -12,7 +12,7 @@ on:
 
 env:
   AZURE_FUNCTIONAPP_PACKAGE_PATH: '.' # set this to the path to your web app project, defaults to the repository root
-  PYTHON_VERSION: '3.11' # set this to the python version to use (supports 3.6, 3.7, 3.8)
+  PYTHON_VERSION: '3.9-slim' # set this to the python version to use (supports 3.6, 3.7, 3.8)
 
 jobs:
   build:
@@ -26,7 +26,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.9-slim'
 
       - name: Create and start virtual environment
         run: |
@@ -36,6 +36,13 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
         
+      - name: Build Docker image
+        run: |
+          docker build -t phone-classifier .
+  
+      - name: Run Docker container
+        run: |
+          docker run -d --name phone-classifier:production -p 8000:8000 phone-classifier
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
       - name: Zip artifact for deployment
