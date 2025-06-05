@@ -31,3 +31,19 @@ jobs:
         with:
           commit_message: "Update trained models"
           file_pattern: "models/**"
+
+  build:
+    runs-on: ubuntu-latest
+    needs: train
+    permissions:
+      contents: write
+    steps:
+      - name: Build Docker image
+        run: |
+          docker build -t phone-classifier .
+      
+      - name: Push Docker image to registry
+        run: |
+          docker login phoneclassifier.azurecr.io
+          docker tag production phoneclassifier.azurecr.io/production 
+          docker push phoneclassifier.azurecr.io/production
