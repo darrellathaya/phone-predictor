@@ -1,79 +1,64 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/azure/functions-action
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-# More info on Python, GitHub Actions, and Azure Functions: https://aka.ms/python-webapps-actions
-
 name: Build and deploy Python project to Azure Function App - phoneclassifier
 
 on:
   workflow_run:
-    workflows: ["Retrain Model on New Data"]  # Match the 'name' in ci.yml
+    workflows: ["Retrain Model on New Data"]
     types:
       - completed
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.' # set this to the path to your web app project, defaults to the repository root
-  PYTHON_VERSION: '3.9' # set this to the python version to use (supports 3.6, 3.7, 3.8)
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'
+  PYTHON_VERSION: '3.9'
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: write #This is required for actions/checkout
+      contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up Python version
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
-  
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Log in to Azure using Service Principal
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to ACR
+        run: az acr login --name phoneclassifier
+
       - name: Build Docker image
         run: |
-          docker build phoneclassifier.azurecr.io/phone-classifier:production .
-          docker push phoneclassifier.azurecr.io/phone-classifier:production
-          
-      - name: Run Docker container
-        run: |
-          docker run -it --entrypoint /bin/sh phoneclassifier.azurecr.io/phone-classifier:production
-        
-      - name: Push Docker container
+          docker build -t phoneclassifier.azurecr.io/phone-classifier:production .
+
+      - name: Push Docker image to ACR
         run: |
           docker push phoneclassifier.azurecr.io/phone-classifier:production
+
+      - name: Run container (optional check)
+        run: |
+          docker run --rm phoneclassifier.azurecr.io/phone-classifier:production
 
       - name: Zip artifact for deployment
         run: zip release.zip ./* -r
 
-      - name: Upload artifact for deployment jobs
+      - name: Upload deployment artifact
         uses: actions/upload-artifact@v4
         with:
           name: python-app
           path: |
             release.zip
-            !venv/     
-  
-  # deploy-webapp:
-  #   runs-on: ubuntu-latest
-  #   needs: deploy-container
-  #     # - name: Download artifact from build job
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: python-app
+            !venv/
 
-      # - name: Unzip artifact for deployment
-      #   run: unzip release.zip
-
-      
-      # - name: Login to Azure
-      #   uses: azure/login@v2
-      #   with:
-      #     client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_28610A281DC1413C93185B90503E1EDA }}
-      #     tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_FFA690A1319F459B90BEDE2700B997E5 }}
-      #     subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C012800DDC7841E1B41D35EDBADB4BBC }}
-
-      # - name: 'Deploy to Azure Web App'
-      #   uses: azure/webapps-deploy@v3
-      #   id: deploy-to-webapp
-      #   with:
-      #     app-name: 'phoneclassifier'
-      #     slot-name: 'Production'
+      - name: Deploy to Azure Function App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'phoneclassifier'
+          slot-name: 'Production'
+          images: 'phoneclassifier.azurecr.io/phone-classifier:production'
