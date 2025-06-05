@@ -1,9 +1,10 @@
 name: Build and deploy Python project to Azure VM - phoneclassifier
 
 on:
-  push:
-    paths:
-      - 'train.csv'
+   workflow_run:
+    workflows: ["Retrain Model on New Data"]  # must match the name from step 1
+    types:
+      - completed
 
 env:
   PYTHON_VERSION: '3.9'
