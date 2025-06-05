@@ -30,7 +30,7 @@ jobs:
   
       - name: Build Docker image
         run: |
-          docker build -t phone-classifier .
+          docker build -t phone-classifier:production .
   
       - name: Run Docker container
         run: |
