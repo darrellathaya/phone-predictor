@@ -1,14 +1,10 @@
-name: Deploy to Azure App Service
+name: Deploy to Supabase
 
 on:
   workflow_run:
-    workflows: ["Retrain Model on New Data"]
+    workflows: ["Retrain Model on New Data"]  # Match the 'name' in ci.yml
     types:
       - completed
-
-env:
-  AZURE_WEBAPP_NAME: current-time-service
-  IMAGE_NAME: phone-classifier
 
 jobs:
   deploy:
@@ -16,22 +12,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: docker build -t $IMAGE_NAME .
+      - name: Install Supabase CLI
+        run: |
+          npm install -g supabase
 
-      - name: Deploy to Azure Web App
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: kv-secret-rotation-sample-appsrv-dev
-          resource-group-name: kv-secret-rotation-sample-rg-dev
-          package: .
+      - name: Login to Supabase
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          echo "$SUPABASE_ACCESS_TOKEN" | supabase login --token-from-stdin
+
+      - name: Deploy Supabase project
+        run: supabase db push
