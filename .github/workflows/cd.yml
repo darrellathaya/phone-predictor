@@ -1,25 +1,77 @@
-# name: Deploy to Supabase
+# Docs for the Azure Web Apps Deploy action: https://github.com/azure/functions-action
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+# More info on Python, GitHub Actions, and Azure Functions: https://aka.ms/python-webapps-actions
 
-# on:
-#   workflow_run:
-#     workflows: ["Retrain Model on New Data"]  # Match the 'name' in ci.yml
-#     types:
-#       - completed
+name: Build and deploy Python project to Azure Function App - brewdat-bees-ghq-sales-commperf-funcapp-p
 
-# jobs:
-#   deploy:
-#     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-#     runs-on: ubuntu-latest
+on:
+  workflow_run:
+    workflows: ["Retrain Model on New Data"]  # Match the 'name' in ci.yml
+    types:
+      - completed
 
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
+env:
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.' # set this to the path to your web app project, defaults to the repository root
+  PYTHON_VERSION: '3.12.1' # set this to the python version to use (supports 3.6, 3.7, 3.8)
+
+jobs:
+  build:
+    runs-on: self-hosted-prod
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python version
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Create and start virtual environment
+        run: |
+          python -m venv venv
+          .\venv\Scripts\Activate
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Optional: Add step to run tests here
+
+      - name: Zip artifact for deployment
+        run: Compress-Archive -Path .\* -DestinationPath .\release.zip -Force
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v3
+        with:
+          name: python-app
+          path: |
+            release.zip
+            !venv/
+
+  deploy:
+    runs-on: self-hosted-prod
+    needs: build
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-function.outputs.webapp-url }}
+    
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v3
+        with:
+          name: python-app
+
+      - name: Unzip artifact for deployment
+        run: |
+          Write-Host "Extracting release.zip..."
+          Expand-Archive .\release.zip -DestinationPath .\Extracted   
         
-#       - name: Login to Supabase
-#         env:
-#           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-#         run: |
-#           echo "$SUPABASE_ACCESS_TOKEN" | supabase login --token-from-stdin
-
-#       - name: Deploy Supabase project
-#         run: supabase db push
+      - name: 'Deploy to Azure Functions'
+        uses: Azure/functions-action@v1
+        id: deploy-to-function
+        with:
+          app-name: 'brewdat-bees-ghq-sales-commperf-funcapp-p'
+          slot-name: 'Production'
+          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          scm-do-build-during-deployment: true
+          enable-oryx-build: true
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
