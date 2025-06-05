@@ -45,5 +45,5 @@ jobs:
       - name: Push Docker image to registry
         run: |
           docker login phoneclassifier.azurecr.io
-          docker tag production phoneclassifier.azurecr.io/production 
-          docker push phoneclassifier.azurecr.io/production
+          docker tag phone-classifier:production phoneclassifier.azurecr.io/phone-classifier:production 
+          docker push phoneclassifier.azurecr.io/phone-classifier:production
