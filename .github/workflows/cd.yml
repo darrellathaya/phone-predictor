@@ -1,21 +1,19 @@
-name: Build and deploy Python project to Azure Function App - phoneclassifier
+name: Build and deploy Python project to Azure VM - phoneclassifier
 
 on:
-  workflow_run:
-    workflows: ["Retrain Model on New Data"]
-    types:
-      - completed
+  push:
+    paths:
+      - 'train.csv'
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'
   PYTHON_VERSION: '3.9'
+  VM_IP: ${{ secrets.VM_IP }}
+  VM_USER: ${{ secrets.VM_USER }}
+  VM_KEY: ${{ secrets.VM_KEY }}
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,35 +28,21 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Log in to ACR
-        run: az acr login --name phoneclassifier
-
       - name: Build Docker image
+        run: docker build -t phoneclassifier .
+
+      - name: Save Docker image to tarball
+        run: docker save phoneclassifier -o image.tar
+
+      - name: Copy Docker image to VM
         run: |
-          docker build -t phoneclassifier.azurecr.io/phone-classifier:production .
+          scp -o StrictHostKeyChecking=no -i ${{ env.VM_KEY }} image.tar ${{ env.VM_USER }}@${{ env.VM_IP }}:/home/${{ env.VM_USER }}/
 
-      - name: Push Docker image to ACR
+      - name: SSH into VM and load/run image
         run: |
-          docker push phoneclassifier.azurecr.io/phone-classifier:production
-
-      - name: Run container (optional check)
-        run: |
-          docker run --rm phoneclassifier.azurecr.io/phone-classifier:production
-
-      - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
-
-      - name: Upload deployment artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-app
-          path: |
-            release.zip
-            !venv/
-
-      - name: Deploy to Azure Function App
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'phoneclassifier'
-          slot-name: 'Production'
-          images: 'phoneclassifier.azurecr.io/phone-classifier:production'
+          ssh -o StrictHostKeyChecking=no -i ${{ env.VM_KEY }} ${{ env.VM_USER }}@${{ env.VM_IP }} << 'EOF'
+            docker load -i image.tar
+            docker stop phoneclassifier || true
+            docker rm phoneclassifier || true
+            docker run -d --name phoneclassifier -p 80:80 phoneclassifier
+          EOF
