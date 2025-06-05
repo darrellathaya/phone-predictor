@@ -34,7 +34,7 @@ jobs:
   
       - name: Run Docker container
         run: |
-          docker run -d --name phone-classifier:production -p 8000:8000 phone-classifier
+          docker run -d --name phone-classifier -p 8000:8000 phone-classifier:production
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
       - name: Zip artifact for deployment
