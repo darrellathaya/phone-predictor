@@ -43,7 +43,18 @@ These instructions will help you set up the project locally and run it manually.
    git clone https://github.com/darrellathaya/phone-predictor.git
    cd phone-predictor
 
-2. Install missing dependencies
+2. Install Azure CLI
+   a. Windows
+      ```sh
+      Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi; Start-Process .\AzureCLI.msi
+      ```
+   
+   b. Linux
+      ```sh
+      curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+      ```
+   
+3. Install missing dependencies
    ```sh
    pip install -r requirements.txt
    
@@ -61,7 +72,7 @@ These instructions will help you set up the project locally and run it manually.
    python src/model.py
    ```
 
-3. Run via Github Actions
+3. Running the CI/CD
    ```sh
    a. Add new data into train.csv
 

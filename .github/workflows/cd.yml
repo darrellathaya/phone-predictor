@@ -55,8 +55,7 @@ jobs:
     steps:
       - name: Push Docker image to Azure Container Registry
         run: |
-          sudo az login
-          sudo az acr login --name phoneclassifierregistry
+          sudo az acr login --name phoneclassifier
           
           sudo docker pull mcr.microsoft.com/mcr/hello-world
           sudo docker tag mcr.microsoft.com/mcr/hello-world phoneclassifier.azurecr.io/samples/hello-world
