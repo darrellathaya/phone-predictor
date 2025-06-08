@@ -10,7 +10,8 @@ from sklearn.model_selection import train_test_split
 
 # Directory where models and related files will be saved
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_DIR = os.path.join(BASE_DIR, "..", "data/raw")
+MODEL_DIR = os.path.join(BASE_DIR, "..", "models")
+DATA_DIR = os.path.join(BASE_DIR, "..", "data/raw")
 META_PATH = os.path.join(MODEL_DIR, "meta.json")
 
 def convert_resolution(res_str):
@@ -113,7 +114,7 @@ def train_model(df, algorithm_name):
         f.write(str(acc))
 
     # Save metadata: original chipset and display_resolution strings for dropdowns or UI
-    raw_df = pd.read_csv(os.path.join("data", "raw", "train.csv"))
+    raw_df = pd.read_csv(os.path.join("DATA_DIR", "..", "train.csv"))
     chipset_list = sorted(raw_df['chipset'].dropna().unique().tolist())
     resolution_list = sorted(raw_df['display_resolution'].dropna().unique().tolist())
 
