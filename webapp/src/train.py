@@ -7,7 +7,7 @@ MODEL_DIR = os.path.join(BASE_DIR, "..", "data/raw")
 META_PATH = os.path.join(MODEL_DIR, "train.csv")
 
 def train():
-    df = pd.read_csv(DATA_PATH)
+    df = pd.read_csv(META_PATH)
 
     # You must explicitly specify algorithm name now
     train_model(df, algorithm_name="random_forest")
