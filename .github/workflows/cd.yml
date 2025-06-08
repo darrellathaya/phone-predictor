@@ -1,7 +1,10 @@
-name: Python CI
+name: Azure Static Web Apps CI/CD
 
 on:
-  [push]
+  workflow_run:
+    workflows: ["Retrain Model on New Data"]
+    types:
+      - completed
 
 env:
   AZURE_WEBAPP_NAME: phone-classifier # Set this to your application's name
