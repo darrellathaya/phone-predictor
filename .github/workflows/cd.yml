@@ -1,49 +1,55 @@
-name: Build and deploy Python project to Azure VM - phoneclassifier
+name: Azure Static Web Apps CI/CD
 
 on:
-   workflow_run:
-    workflows: ["Retrain Model on New Data"]  # must match the name from step 1
+  workflow_run:
+    workflows: ["Retrain Model on New Data"]
     types:
       - completed
 
-env:
-  PYTHON_VERSION: '3.9'
-  VM_IP: ${{ secrets.VM_IP }}
-  VM_USER: ${{ secrets.VM_USER }}
-  VM_KEY: ${{ secrets.VM_KEY }}
-
 jobs:
-  build-and-deploy:
+  build_and_deploy_job:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
+    name: Build and Deploy Job
+    permissions:
+       id-token: write
+       contents: read
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v3
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Log in to Azure using Service Principal
-        uses: azure/login@v1
+          submodules: true
+          lfs: false
+      - name: Install OIDC Client from Core Package
+        run: npm install @actions/core@1.6.0 @actions/http-client
+      - name: Get Id Token
+        uses: actions/github-script@v6
+        id: idtoken
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+           script: |
+               const coredemo = require('@actions/core')
+               return await coredemo.getIDToken()
+           result-encoding: string
+      - name: Build And Deploy
+        id: builddeploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: "upload"
+          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
+          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
+          app_location: "./webapp" # App source code path
+          api_location: "" # Api source code path - optional
+          output_location: "" # Built app content directory - optional
+          github_id_token: ${{ steps.idtoken.outputs.result }}
+          ###### End of Repository/Build Configurations ######
 
-      - name: Build Docker image
-        run: docker build -t phoneclassifier .
-
-      - name: Save Docker image to tarball
-        run: docker save phoneclassifier -o image.tar
-
-      - name: Copy Docker image to VM
-        run: |
-          scp -o StrictHostKeyChecking=no -i ${{ env.VM_KEY }} image.tar ${{ env.VM_USER }}@${{ env.VM_IP }}:/home/${{ env.VM_USER }}/
-
-      - name: SSH into VM and load/run image
-        run: |
-          ssh -o StrictHostKeyChecking=no -i ${{ env.VM_KEY }} ${{ env.VM_USER }}@${{ env.VM_IP }} << 'EOF'
-            docker load -i image.tar
-            docker stop phoneclassifier || true
-            docker rm phoneclassifier || true
-            docker run -d --name phoneclassifier -p 80:80 phoneclassifier
-          EOF
+  close_pull_request_job:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    name: Close Pull Request Job
+    steps:
+      - name: Close Pull Request
+        id: closepullrequest
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          action: "close"
