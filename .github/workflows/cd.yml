@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+
     - name: Set up Python 3.9
       uses: actions/setup-python@v4
       with:
@@ -29,3 +30,7 @@ jobs:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_AD68A6E93B1D49429B4B0890399445D7 }}
         package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+    
+    - name: Running the Container
+      run: |
+        az webapp config set --resource-group MLOps --name ${{ env.AZURE_WEBAPP_NAME }} --startup-file "uvicorn app.main:app --reload"
