@@ -10,8 +10,7 @@ from sklearn.model_selection import train_test_split
 
 # Directory where models and related files will be saved
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_DIR = os.path.join(BASE_DIR, "..", "models")
-DATA_DIR = os.path.join(BASE_DIR, "..", "data/raw")
+MODEL_DIR = os.path.join(BASE_DIR, "models")
 META_PATH = os.path.join(MODEL_DIR, "meta.json")
 
 def convert_resolution(res_str):

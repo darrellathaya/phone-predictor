@@ -11,7 +11,7 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_DIR = os.path.join(BASE_DIR, "..", "models")
+MODEL_DIR = os.path.join(BASE_DIR, "models")
 META_PATH = os.path.join(MODEL_DIR, "meta.json")
 
 # Load meta dropdown choices once
