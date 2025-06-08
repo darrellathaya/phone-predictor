@@ -9,9 +9,8 @@ from sklearn.metrics import classification_report, accuracy_score
 from sklearn.model_selection import train_test_split
 
 # Directory where models and related files will be saved
-MODEL_DIR = "models"
-
-# Path to metadata file (e.g., dropdown options for chipset and resolution)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_DIR = os.path.join(BASE_DIR, "..", "data/raw")
 META_PATH = os.path.join(MODEL_DIR, "meta.json")
 
 def convert_resolution(res_str):

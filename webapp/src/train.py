@@ -3,8 +3,8 @@ import pandas as pd
 from model import train_model
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_DIR = os.path.join(BASE_DIR, "..", "data/raw")
-META_PATH = os.path.join(MODEL_DIR, "train.csv")
+DATA_DIR = os.path.join(BASE_DIR, "..", "data/raw")
+META_PATH = os.path.join(DATA_DIR, "train.csv")
 
 def train():
     df = pd.read_csv(META_PATH)
