@@ -64,7 +64,7 @@ jobs:
       url: ${{ env.PRODUCTION_APP_URL }}
 
     steps:
-      - name: Deploy ke Azure Web App Production menggunakan Publish Profile
+      - name: Deploy to Azure Web App Production with Publish Profile
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME_PRODUCTION }}
