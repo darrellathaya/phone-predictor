@@ -2,6 +2,8 @@ name: Build and deploy Dockerized FastAPI to Railway
 
 on:
   workflow_run:
+    branches:
+      - work-2
     workflows: ["Retrain Model on New Data"]
     types:
       - completed
