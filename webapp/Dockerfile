@@ -1,21 +1,21 @@
-# Use official Python base image
+# Use official Python image
 FROM python:3.10-slim
 
-# Avoid buffering for logs
+# Avoid buffering logs
 ENV PYTHONUNBUFFERED=1
 
-# Set working directory
+# Set the working directory
 WORKDIR /app
 
 # Install dependencies
-COPY requirements.txt .
+COPY webapp/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY . .
+# Copy everything from webapp/ into the container
+COPY webapp/ .
 
 # Expose FastAPI port
 EXPOSE 8000
 
-# Start FastAPI using Uvicorn directly
+# Run the FastAPI app using Uvicorn
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
