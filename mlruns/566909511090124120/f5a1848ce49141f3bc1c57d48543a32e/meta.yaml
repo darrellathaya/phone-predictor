@@ -1,0 +1,14 @@
+artifact_uri: file:///D:/Tugas/Kuliah/PSO/mlops-phone-price/mlruns/566909511090124120/f5a1848ce49141f3bc1c57d48543a32e/artifacts
+end_time: 1749653173239
+entry_point_name: ''
+experiment_id: '566909511090124120'
+lifecycle_stage: active
+run_id: f5a1848ce49141f3bc1c57d48543a32e
+run_name: SVM
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1749653173148
+status: 3
+tags: []
+user_id: mac
