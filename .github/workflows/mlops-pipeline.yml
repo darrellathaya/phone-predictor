@@ -1,0 +1,70 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - work-2
+
+jobs:
+  pre-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run training script
+        run: python src/train_model.py
+      
+  model-test:
+    runs-on: ubuntu-latest
+    needs: pre-build
+    steps:
+      - name: Start MLflow Tracking Server (Docker)
+        run: |
+          docker run -d -p 5000:5000 \
+          -v ${{ github.workspace }}/mlruns:/mlflow/mlruns \
+          ghcr.io/mlflow/mlflow:v2.12.1 mlflow server \
+          --backend-store-uri /mlflow/mlruns --host 0.0.0.0 --port 5000
+
+      - name: List MLflow experiments
+        run: |
+          python -c "import mlflow; mlflow.set_tracking_uri('http://127.0.0.1:5000'); print(mlflow.search_experiments())"
+
+  
+  code-test:
+    runs-on: ubuntu-latest
+    needs: pre-build
+    steps:
+      - name: SonarQube Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=phone-classifier
+            -Dsonar.organization=your-org
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.python.version=3.10
+
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    needs: [pre-build, model-test, code-test]
+    steps:
+      - name: Commit and push model files
+        env:
+          GH_TOKEN: ${{ secrets.RAILWAY_SECRET }}
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update trained models"
+          file_pattern: "webapp/models/**"

@@ -40,21 +40,10 @@ These instructions will help you set up the project locally and run it manually.
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/darrellathaya/phone-predictor.git
+   git clone https://github.com/Viggofudail/mlops-phone-price.git
    cd phone-predictor
 
-2. Install Azure CLI
-   a. Windows
-      ```sh
-      Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi; Start-Process .\AzureCLI.msi
-      ```
-   
-   b. Linux
-      ```sh
-      curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-      ```
-   
-3. Install missing dependencies
+2. Install missing dependencies
    ```sh
    pip install -r requirements.txt
    
@@ -62,17 +51,17 @@ These instructions will help you set up the project locally and run it manually.
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-1. Running the web app locally
-   ```sh
-   uvicorn app.main:app --reload
-   ```
-
-2. Train the model locally
+1. Train the model locally
    ```sh
    python src/model.py
    ```
 
-3. Running the CI/CD
+2. Running the web app locally
+   ```sh
+   uvicorn app.main:app --reload
+   ```
+
+3. Run via Railway
    ```sh
    a. Add new data into train.csv
 
@@ -83,34 +72,30 @@ These instructions will help you set up the project locally and run it manually.
 ## Project Directory
 ```sh
 .
-github
-  workflows
-    ci.yml
-    cd.yml
-    azure-static-web-apps-icy-grass-0d9960500.yml
-webapp
-  app
-    _pycache_
-      main.cpython-312.pyc
-      main.cpython-313.pyc
-    main.py
-  data
-    raw
-      train.csv
-  models
-    accuracy.txt
-    chipset_encoder.pkl
-    meta.json
-    price_range_model.pkl
-    price_regression_model.pkl
-    regression_metrics.txt
-  src
-    train.py
-    model.py
-  templates
-    index.html
-  Dockerfile
-  requirements.txt
+├── app/
+│   ├── _pycache_/
+│   │   ├── main.cpython-312.pyc
+│   │   └── main.cpython-313.pyc
+│   └── main.py
+├── data/
+│   └── raw/
+│       └── train.csv
+├── models/
+│   ├── accuracy.txt
+│   ├── chipset_encoder.pkl
+│   ├── meta.json
+│   ├── model.pkl
+│   └── regression_metrics.txt
+├── src/
+├── _pycache_/
+│   │   ├── main.cpython-312.pyc
+│   ├── model.py
+│   ├── train.py
+├── templates/
+│   └── index.html
+├── Dockerfile
+├── README.md
+└── requirements.txt
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
