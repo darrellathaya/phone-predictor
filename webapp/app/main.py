@@ -9,7 +9,6 @@ import glob
 
 app = FastAPI()
 
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "..", "models")
 META_PATH = os.path.join(MODEL_DIR, "meta.json")
@@ -30,22 +29,15 @@ def convert_resolution(res_str):
         return 0
 
 def find_best_model():
-    """
-    Scans the models directory for all *_model.pkl and corresponding accuracy files,
-    returns the best model path, chipset encoder path, target encoder path, and accuracy
-    """
     best_acc = -1
     best_model_path = None
     best_chipset_encoder_path = None
     best_target_encoder_path = None
 
-    # Pattern to match model files like random_forest_model.pkl, gradient_boosting_model.pkl, etc
     model_files = glob.glob(os.path.join(MODEL_DIR, "*_model.pkl"))
 
     for model_path in model_files:
-        # Extract prefix: e.g. 'random_forest' from 'random_forest_model.pkl'
         prefix = os.path.basename(model_path).replace("_model.pkl", "")
-
         accuracy_path = os.path.join(MODEL_DIR, f"{prefix}_accuracy.txt")
         chipset_encoder_path = os.path.join(MODEL_DIR, f"{prefix}_chipset_encoder.pkl")
         target_encoder_path = os.path.join(MODEL_DIR, f"{prefix}_target_encoder.pkl")
@@ -80,12 +72,9 @@ except Exception as e:
     target_encoder = None
     BEST_ACCURACY = None
 
-
 @app.get("/", response_class=HTMLResponse)
 def form_get(request: Request):
-    acc = None
-    if BEST_ACCURACY is not None:
-        acc = round(BEST_ACCURACY * 100, 2)
+    acc = round(BEST_ACCURACY * 100, 2) if BEST_ACCURACY is not None else None
     return templates.TemplateResponse("index.html", {
         "request": request,
         "prediction": None,
@@ -119,12 +108,8 @@ def form_post(
     try:
         display_res_value = convert_resolution(display_resolution)
         chipset_encoded = chipset_encoder.transform([chipset])[0]
-
         input_data = np.array([[ram, storage, display_res_value, chipset_encoded]])
-
         prediction_encoded = model.predict(input_data)[0]
-
-        # Decode numeric prediction back to original label
         prediction = target_encoder.inverse_transform([prediction_encoded])[0]
 
         acc = round(BEST_ACCURACY * 100, 2) if BEST_ACCURACY is not None else None
@@ -154,7 +139,3 @@ def form_post(
             "ram": ram,
             "storage": storage
         })
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

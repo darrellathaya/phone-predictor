@@ -1,20 +1,24 @@
-# Use an official slim Python image
+# Use official Python base image
 FROM python:3.11-slim
 
-# Set working directory inside the container
-WORKDIR /webapp
+# Avoid buffering for logs
+ENV PYTHONUNBUFFERED=1
 
-# Copy only requirements first for better caching
-COPY requirements.txt .
+# Extend timeout in Gunicorn (optional but helpful for Azure)
+ENV GUNICORN_CMD_ARGS="--timeout 240"
+
+# Set working directory
+WORKDIR /app
 
 # Install dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy all contents from webapp folder into /app
+# Copy rest of the application
 COPY . .
 
-# Expose the FastAPI default port
+# Expose the FastAPI port
 EXPOSE 8000
 
-# Command to run the FastAPI app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Launch FastAPI with Gunicorn and Uvicorn workers
+CMD ["gunicorn", "app.main:app", "-k", "uvicorn.workers.UvicornWorker", "--host", "0.0.0.0", "--port", "8000"]
