@@ -8,7 +8,7 @@ on:
 jobs:
   pre-build:
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -24,6 +24,8 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run training script
+        env:
+            MLFLOW_TRACKING_URI: file:///tmp/mlruns
         run: python src/train_model.py
       
   model-test:
