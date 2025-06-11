@@ -1,9 +1,0 @@
-fastapi
-uvicorn[standard]
-joblib
-jinja2
-numpy
-pandas
-scikit-learn==1.6.1
-python-multipart
-mlflow
