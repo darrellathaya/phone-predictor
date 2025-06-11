@@ -18,7 +18,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.10'
 
       - name: Install dependencies
         run: pip install -r webapp/requirements.txt
@@ -31,3 +31,4 @@ jobs:
         with:
           commit_message: "Update trained models"
           file_pattern: "webapp/models/**"
+          push_options: --force
