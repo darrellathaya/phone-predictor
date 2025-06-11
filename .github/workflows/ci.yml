@@ -5,7 +5,7 @@ on:
     branches:
       - work-2
     paths:
-        - "webapp/data/raw/*"
+      - "webapp/data/raw/*"
 
 jobs:
   train:
