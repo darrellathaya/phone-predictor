@@ -21,4 +21,4 @@ COPY . .
 EXPOSE 8000
 
 # Launch FastAPI with Gunicorn and Uvicorn workers
-CMD ["gunicorn", "app.main:app", "-k", "uvicorn.workers.UvicornWorker", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["gunicorn", "app.main:app", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000"]
