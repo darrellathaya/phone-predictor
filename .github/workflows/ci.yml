@@ -2,6 +2,8 @@ name: Retrain Model on New Data
 
 on:
    push:
+    branches:
+      - work-2
     paths:
         - "webapp/data/raw/*"
 
