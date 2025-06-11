@@ -11,7 +11,7 @@ app = FastAPI()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "..", "models")
-META_PATH = os.path.join(MODEL_DIR, "..", "meta.json")
+META_PATH = os.path.join(MODEL_DIR, "meta.json")
 
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "..", "templates"))
 
