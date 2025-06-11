@@ -12,7 +12,7 @@ COPY webapp/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy everything from webapp/ into the container
-COPY webapp/ .
+COPY . .
 
 # Expose FastAPI port
 EXPOSE 8000
