@@ -1,9 +1,9 @@
-name: CI Pipeline for test-aja branch
+name: CI Pipeline
 
 on:
   push:
     branches:
-      - test-aja
+      - work-2
 
 jobs:
   build:
@@ -38,10 +38,7 @@ jobs:
       - name: Commit and push model files
         env:
           GH_TOKEN: ${{ secrets.RAILWAY_SECRET }}
-        run: |
-          git config --global user.name "Viggofudail"
-          git config --global user.email "Viggofudail@gmail.com"
-          git remote set-url origin https://${GH_TOKEN}@github.com/Viggofudail/mlops-phone-price.git
-          git add models/
-          git commit -m "UPDATE" || echo "No changes to commit"
-          git push origin test-aja
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update trained models"
+          file_pattern: "app/models/**"
