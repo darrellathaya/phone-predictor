@@ -18,7 +18,7 @@ jobs:
       MLFLOW_PORT: 5000
       MLFLOW_IMAGE: ghcr.io/mlflow/mlflow:v2.12.1
       MLFLOW_VOLUME: ${{ github.workspace }}/mlruns
-      BRANCH_NAME: test-aja
+      BRANCH_NAME: work-2
 
     steps:
       - name: Checkout repository
