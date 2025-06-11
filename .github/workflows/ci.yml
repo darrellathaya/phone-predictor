@@ -1,4 +1,4 @@
-name: Retrain Model on New Data
+name: Retrain Model on New Data Changes
 
 on:
    push:
