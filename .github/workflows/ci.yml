@@ -3,7 +3,7 @@ name: Retrain Model on New Data
 on:
    push:
     paths:
-        - "webapp/data/**"
+        - "webapp/data/raw/*"
 
 jobs:
   train:
