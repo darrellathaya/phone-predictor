@@ -2,7 +2,7 @@
 FROM python:3.11-slim
 
 # Set working directory inside the container
-WORKDIR /app
+WORKDIR /webapp
 
 # Copy only requirements first for better caching
 COPY requirements.txt .
