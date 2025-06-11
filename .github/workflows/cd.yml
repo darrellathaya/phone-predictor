@@ -52,7 +52,6 @@ jobs:
   deploy_production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: deploy_staging
     environment:
       name: production
       url: ${{ env.PRODUCTION_APP_URL }}
