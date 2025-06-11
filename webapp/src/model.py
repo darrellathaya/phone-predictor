@@ -7,6 +7,8 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.metrics import classification_report, accuracy_score
 from sklearn.model_selection import train_test_split
+import mlflow
+import mlflow.sklearn
 
 # Directory where models and related files will be saved
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -152,3 +154,95 @@ def load_model(algorithm_name):
     le_target = joblib.load(target_encoder_path)
 
     return pipeline, le_chipset, le_target
+
+def train_model(df, algorithm_name):
+    if algorithm_name not in ALGORITHMS:
+        raise ValueError(f"Algorithm '{algorithm_name}' not supported. Choose from {list(ALGORITHMS.keys())}")
+
+    # Define paths
+    model_path = os.path.join(MODEL_DIR, f"{algorithm_name}_model.pkl")
+    encoder_path = os.path.join(MODEL_DIR, f"{algorithm_name}_chipset_encoder.pkl")
+    target_encoder_path = os.path.join(MODEL_DIR, f"{algorithm_name}_target_encoder.pkl")
+    accuracy_path = os.path.join(MODEL_DIR, f"{algorithm_name}_accuracy.txt")
+
+    # Preprocess
+    df['display_resolution'] = df['display_resolution'].apply(convert_resolution)
+    features = ['ram', 'storage', 'display_resolution', 'chipset']
+    X = df[features]
+    y = df['price_range']
+
+    le_chipset = LabelEncoder()
+    X.loc[:, 'chipset'] = le_chipset.fit_transform(X['chipset'])
+
+    le_target = LabelEncoder()
+    y = le_target.fit_transform(y)
+
+    X_train, X_val, y_train, y_val = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+
+    classifier = ALGORITHMS[algorithm_name]
+    pipeline = Pipeline([
+        ('scaler', StandardScaler()),
+        ('classifier', classifier)
+    ])
+
+    # === MLflow: Start experiment run
+    mlflow.set_experiment("phone_price_prediction")
+    with mlflow.start_run(run_name=f"{algorithm_name}_run"):
+
+        # === MLflow: Log parameters
+        mlflow.log_param("algorithm", algorithm_name)
+        if hasattr(classifier, 'n_estimators'):
+            mlflow.log_param("n_estimators", classifier.n_estimators)
+        if hasattr(classifier, 'learning_rate'):
+            mlflow.log_param("learning_rate", classifier.learning_rate)
+
+        # Train and evaluate
+        pipeline.fit(X_train, y_train)
+        y_pred = pipeline.predict(X_val)
+        acc = accuracy_score(y_val, y_pred)
+        report = classification_report(y_val, y_pred)
+
+        print(f"=== Classification Report for {algorithm_name} ===\n{report}")
+        print(f"Accuracy: {acc:.4f}")
+
+        # === MLflow: Log metrics
+        mlflow.log_metric("accuracy", acc)
+
+        # === MLflow: Log model
+        mlflow.sklearn.log_model(pipeline, artifact_path="model")
+
+        # === MLflow: Log additional artifacts (report, encoders, meta.json)
+        report_path = os.path.join(MODEL_DIR, f"{algorithm_name}_report.txt")
+        with open(report_path, "w") as f:
+            f.write(report)
+        mlflow.log_artifact(report_path)
+
+        # Save & log encoders and metadata
+        joblib.dump(pipeline, model_path)
+        joblib.dump(le_chipset, encoder_path)
+        joblib.dump(le_target, target_encoder_path)
+        mlflow.log_artifact(model_path)
+        mlflow.log_artifact(encoder_path)
+        mlflow.log_artifact(target_encoder_path)
+
+        with open(accuracy_path, "w") as f:
+            f.write(str(acc))
+        mlflow.log_artifact(accuracy_path)
+
+        raw_df = pd.read_csv(DATA_DIR)
+        chipset_list = sorted(raw_df['chipset'].dropna().unique().tolist())
+        resolution_list = sorted(raw_df['display_resolution'].dropna().unique().tolist())
+
+        meta = {
+            "chipset_list": chipset_list,
+            "resolution_list": resolution_list
+        }
+        with open(META_PATH, "w") as f:
+            json.dump(meta, f)
+        mlflow.log_artifact(META_PATH)
+
+        print(f"Model, encoders, accuracy, and metadata saved successfully with prefix '{algorithm_name}'.")
+
+    return pipeline, le_chipset, le_target, acc
