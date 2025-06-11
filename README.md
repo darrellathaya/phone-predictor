@@ -83,30 +83,34 @@ These instructions will help you set up the project locally and run it manually.
 ## Project Directory
 ```sh
 .
-├── app/
-│   ├── _pycache_/
-│   │   ├── main.cpython-312.pyc
-│   │   └── main.cpython-313.pyc
-│   └── main.py
-├── data/
-│   └── raw/
-│       └── train.csv
-├── models/
-│   ├── accuracy.txt
-│   ├── chipset_encoder.pkl
-│   ├── meta.json
-│   ├── model.pkl
-│   └── regression_metrics.txt
-├── src/
-├── _pycache_/
-│   │   ├── main.cpython-312.pyc
-│   ├── model.py
-│   ├── train.py
-├── templates/
-│   └── index.html
-├── Dockerfile
-├── README.md
-└── requirements.txt
+github
+  workflows
+    ci.yml
+    cd.yml
+    azure-static-web-apps-icy-grass-0d9960500.yml
+webapp
+  app
+    _pycache_
+      main.cpython-312.pyc
+      main.cpython-313.pyc
+    main.py
+  data
+    raw
+      train.csv
+  models
+    accuracy.txt
+    chipset_encoder.pkl
+    meta.json
+    price_range_model.pkl
+    price_regression_model.pkl
+    regression_metrics.txt
+  src
+    train.py
+    model.py
+  templates
+    index.html
+  Dockerfile
+  requirements.txt
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
