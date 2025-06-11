@@ -106,4 +106,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update trained models"
-          file_pattern: "webapp/models/**"
+          file_pattern: "models/**"
