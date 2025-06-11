@@ -37,29 +37,49 @@ jobs:
   model-test:
     runs-on: ubuntu-latest
     needs: pre-build
+
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
       - name: Download mlruns artifact
         uses: actions/download-artifact@v4
         with:
           name: mlruns
           path: ./mlruns
 
-      - name: Install dependencies (again)
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Start MLflow Tracking Server (Docker)
         run: |
-          docker run -d -p 5000:5000 \
-          -v ${{ github.workspace }}/mlruns:/mlflow/mlruns \
-          ghcr.io/mlflow/mlflow:v2.12.1 mlflow server \
-          --backend-store-uri /mlflow/mlruns --host 0.0.0.0 --port 5000
+          docker run -d --name mlflow-server -p 5000:5000 \
+            -v ${{ github.workspace }}/mlruns:/mlflow/mlruns \
+            ghcr.io/mlflow/mlflow:v2.12.1 mlflow server \
+            --backend-store-uri /mlflow/mlruns --host 0.0.0.0 --port 5000
+
+      - name: Wait for MLflow to be ready
+        run: |
+          echo "Waiting for MLflow to be ready..."
+          for i in {1..10}; do
+            if curl -s http://127.0.0.1:5000; then
+              echo "MLflow is up!"
+              break
+            fi
+            echo "MLflow not ready yet. Retrying in 3 seconds..."
+            sleep 3
+          done
 
       - name: List MLflow experiments
         run: |
-          python -c "import mlflow; mlflow.set_tracking_uri('http://127.0.0.1:5000'); print(mlflow.search_experiments())"
-
+          python -c "import mlflow; mlflow.set_tracking_uri('http://127.0.0.1:5000'); print(mlflow.search_experiments())" 
   
   code-test:
     runs-on: ubuntu-latest
