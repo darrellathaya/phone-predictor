@@ -20,10 +20,14 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
 
       - name: Upload mlruns as artifact
         uses: actions/upload-artifact@v4
@@ -56,10 +60,13 @@ jobs:
           name: mlruns
           path: ./mlruns
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Start MLflow Tracking Server (Docker)
         run: |
@@ -99,18 +106,20 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Run tests with coverage
         run: |
-          PYTHONPATH=. pytest
+          python -m pip install --upgrade pip
           pip install coverage pytest
-          coverage run -m pytest tests/
+          PYTHONPATH=. coverage run -m pytest tests/
           coverage xml
-
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master

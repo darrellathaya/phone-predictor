@@ -1,12 +1,13 @@
 import pytest
 import pandas as pd
 from unittest.mock import patch, MagicMock
+from src.train_model import train
 
-@patch("train_model.pd.read_csv")
-@patch("train_model.joblib.dump")
-@patch("train_model.mlflow.start_run")
-@patch("train_model.mlflow.set_experiment")
-@patch("train_model.MlflowClient")
+@patch("src.train_model.pd.read_csv")
+@patch("src.train_model.joblib.dump")
+@patch("src.train_model.mlflow.start_run")
+@patch("src.train_model.mlflow.set_experiment")
+@patch("src.train_model.MlflowClient")
 def test_train_function_runs(mock_mlflow_client, mock_set_experiment, mock_start_run, mock_joblib_dump, mock_read_csv):
     # Sample fake data
     data = {
