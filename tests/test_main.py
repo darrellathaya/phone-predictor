@@ -40,7 +40,7 @@ def test_train_function_runs(
     # --- Assert ---
     mock_read_csv.assert_called_once()
     mock_set_experiment.assert_called_once_with("PhonePricePrediction")
-    mock_start_run.assert_called_once()
+    assert mock_start_run.call_count == 3
     mock_log_param.assert_called()
     mock_log_metric.assert_called()
     mock_joblib_dump.assert_called()
