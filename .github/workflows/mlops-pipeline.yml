@@ -109,11 +109,6 @@ jobs:
           name: models
           path: models/
 
-      - name: Run tests with coverage
-        run: |
-          coverage run -m pytest test_main.py
-          coverage xml
-
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:

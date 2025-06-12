@@ -50,10 +50,12 @@ These instructions will help you set up the project locally and run it manually.
 
 <!-- PREREQUISITES -->
 ### Prerequisites
+1. Register & Login to SonarQube Cloud
 
-1. 
-2. Register & Login to SonarQube Cloud
- 
+2. Github
+   a. Create repository
+   b. Add the Github Secrets
+      Head to Settings > Secrets & Variables > Actions, Click on "New repository secret" as SONAR_TOKEN 
 
 
 <!-- USAGE EXAMPLES -->
