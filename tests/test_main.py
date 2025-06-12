@@ -1,7 +1,6 @@
 import pytest
 import pandas as pd
 from unittest.mock import patch, MagicMock
-from train_model import train
 
 @patch("train_model.pd.read_csv")
 @patch("train_model.joblib.dump")
