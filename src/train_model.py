@@ -50,18 +50,18 @@ def setup_experiment(experiment_name: str) -> str:
     mlflow.set_tracking_uri("file:./mlruns")
     client = MlflowClient()
     experiment = client.get_experiment_by_name(experiment_name)
-    if experiment:
-        print(f"Deleting old experiment: {experiment.experiment_id}")
-        client.delete_experiment(experiment.experiment_id)
 
-    artifact_path = os.path.abspath(f"./mlruns/{experiment_name}")
-    experiment_id = client.create_experiment(
-        name=experiment_name,
-        artifact_location=f"file://{artifact_path}"
-    )
+    if experiment:
+        experiment_id = experiment.experiment_id
+    else:
+        artifact_path = os.path.abspath(f"./mlruns/{experiment_name}")
+        experiment_id = client.create_experiment(
+            name=experiment_name,
+            artifact_location=f"file://{artifact_path}"
+        )
+
     mlflow.set_experiment(experiment_name)
     return experiment_id
-
 
 # === Main Training Logic ===
 def train():
