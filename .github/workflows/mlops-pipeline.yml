@@ -105,6 +105,7 @@ jobs:
 
       - name: Run tests and generate coverage
         run: |
+          pip install pytest pytest-cov
           coverage run -m pytest
           coverage xml
 

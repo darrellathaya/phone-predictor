@@ -40,7 +40,7 @@ These instructions will help you set up the project locally and run it manually.
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/Viggofudail/mlops-phone-price.git
+   git clone https://github.com/darrellathaya/phone-predictor
    cd phone-predictor
 
 2. Install missing dependencies
