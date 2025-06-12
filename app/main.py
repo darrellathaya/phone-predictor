@@ -1,155 +1,156 @@
-from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
-import joblib
 import os
-import numpy as np
 import json
+import joblib
+import pandas as pd
+import numpy as np
+from typing import Tuple
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, f1_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from xgboost import XGBClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from imblearn.over_sampling import SMOTE
+import mlflow
+from mlflow import MlflowClient
 
-app = FastAPI()
-BASE_DIR = Path(__file__).resolve().parent.parent  # Goes up from app/ to root
-app.mount("/static", StaticFiles(directory=BASE_DIR / "templates" / "static"), name="static")
-templates = Jinja2Templates(directory="templates")
+# === Constants ===
+DATA_PATH = os.path.join("data", "raw", "train.csv")
+MODEL_DIR = "models"
+EXPERIMENT_NAME = "PhonePricePrediction"
+os.makedirs(MODEL_DIR, exist_ok=True)
 
-# Paths
-MODEL_PATH = os.path.join("models", "price_range_model.pkl")
-ACCURACY_PATH = os.path.join("models", "accuracy.txt")
-META_PATH = os.path.join("models", "meta.json")
 
-# Load model & metadata
-model = joblib.load(MODEL_PATH)
+# === Helper Functions ===
+def resolution_to_value(res_str: str) -> int:
+    return {"720p": 720, "1080p": 1080, "2k+": 2000}.get(res_str, 720)
 
-with open(META_PATH, "r") as f:
-    meta = json.load(f)
-
-chipset_list = meta.get("chipset_list", [])
-resolution_list = meta.get("resolution_list", ["720p", "1080p", "2k+"])
-label_mapping = meta.get("label_mapping", {})
-label_map = {int(k): v for k, v in label_mapping.items()}  # pastikan int untuk key
-
-# Fungsi skor chipset
 def chipset_score(chipset: str) -> int:
     chipset = chipset.lower()
-    if 'snapdragon 8 gen 3' in chipset:
-        return 850
-    elif 'snapdragon 8 gen 2' in chipset:
-        return 820
-    elif 'snapdragon 888' in chipset:
-        return 800
-    elif 'snapdragon 855' in chipset:
-        return 730
-    elif 'snapdragon 778' in chipset:
-        return 720
-    elif 'snapdragon 765' in chipset:
-        return 690
-    elif 'helio g99' in chipset:
-        return 650
-    elif 'tensor g4' in chipset:
-        return 830
-    elif 'tensor g3' in chipset:
-        return 800
-    elif 'tensor g2' in chipset:
-        return 780
-    elif 'tensor' in chipset:
-        return 750
-    elif 'apple a18' in chipset:
-        return 870
-    elif 'apple a17' in chipset:
-        return 850
-    elif 'apple a16' in chipset:
-        return 830
-    elif 'apple a15' in chipset:
-        return 800
-    elif 'apple a14' in chipset:
-        return 770
-    elif 'apple a13' in chipset:
-        return 740
-    elif 'apple a12' in chipset:
-        return 720
-    elif 'apple a11' in chipset:
-        return 690
-    elif 'kirin' in chipset:
-        return 500
-    elif 'exynos' in chipset:
-        return 650
-    else:
-        return 400
+    scores = {
+        'snapdragon 8 gen 3': 850, 'snapdragon 8 gen 2': 820, 'snapdragon 888': 800,
+        'snapdragon 855': 730, 'snapdragon 778': 720, 'snapdragon 765': 690,
+        'helio g99': 650, 'tensor g4': 830, 'tensor g3': 800, 'tensor g2': 780,
+        'tensor': 750, 'apple a18': 870, 'apple a17': 850, 'apple a16': 830,
+        'apple a15': 800, 'apple a14': 770, 'apple a13': 740, 'apple a12': 720,
+        'apple a11': 690, 'kirin': 500, 'exynos': 650
+    }
+    for key in scores:
+        if key in chipset:
+            return scores[key]
+    return 400
 
-# Konversi resolusi ke nilai numerik
-def resolution_to_value(res_str: str) -> int:
-    if res_str == "720p":
-        return 720
-    elif res_str == "1080p":
-        return 1080
-    elif res_str == "2k+":
-        return 2000
-    else:
-        return 720
+def preprocess_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+    df['display_resolution_cat'] = df['display_resolution'].map(resolution_to_value)
+    df['chipset_score'] = df['chipset'].map(chipset_score)
+    return df[['ram', 'storage', 'display_resolution_cat', 'chipset_score']], df['price_range']
 
-@app.get("/", response_class=HTMLResponse)
-def form_get(request: Request):
-    acc = None
+def setup_experiment(experiment_name: str) -> str:
+    mlflow.set_tracking_uri("file:./mlruns")
+    client = MlflowClient()
+    experiment = client.get_experiment_by_name(experiment_name)
+    if experiment:
+        print(f"Deleting old experiment: {experiment.experiment_id}")
+        client.delete_experiment(experiment.experiment_id)
+
+    artifact_path = os.path.abspath(f"./mlruns/{experiment_name}")
+    experiment_id = client.create_experiment(
+        name=experiment_name,
+        artifact_location=f"file://{artifact_path}"
+    )
+    mlflow.set_experiment(experiment_name)
+    return experiment_id
+
+
+# === Main Training Logic ===
+def train():
+    print("Loading data...")
+    df = pd.read_csv(DATA_PATH)
+
+    print("Encoding labels...")
+    label_mapping = {label: idx for idx, label in enumerate(df['price_range'].unique())}
+    inverse_mapping = {v: k for k, v in label_mapping.items()}
+    df['price_range'] = df['price_range'].map(label_mapping)
+
+    print("Preprocessing features...")
+    X, y = preprocess_data(df)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    print("Class distribution before SMOTE:")
+    print(y_train.value_counts(normalize=True))
+
+    # Apply SMOTE if appropriate
     try:
-        with open(ACCURACY_PATH, "r") as f:
-            acc = round(float(f.read()) * 100, 2)
-    except:
-        acc = None
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "prediction": None,
-        "error": None,
-        "accuracy": acc,
-        "chipset_list": chipset_list,
-        "resolution_list": resolution_list,
-        "selected_chipset": None,
-        "selected_resolution": None,
-        "ram": None,
-        "storage": None
-    })
+        smote = SMOTE(random_state=42)
+        X_train, y_train = smote.fit_resample(X_train, y_train)
+        print("Class distribution after SMOTE:")
+        print(y_train.value_counts(normalize=True))
+    except ValueError as e:
+        print(f"SMOTE error: {e} - Using original data.")
 
-@app.post("/", response_class=HTMLResponse)
-def form_post(
-    request: Request,
-    ram: int = Form(...),
-    storage: int = Form(...),
-    display_resolution: str = Form(...),
-    chipset: str = Form(...)
-):
-    try:
-        display_res_value = resolution_to_value(display_resolution)
-        chipset_val = chipset_score(chipset)
+    models = {
+        "RandomForest": Pipeline([
+            ("scaler", StandardScaler()),
+            ("clf", RandomForestClassifier(random_state=42, class_weight='balanced'))
+        ]),
+        "SVM": Pipeline([
+            ("scaler", StandardScaler()),
+            ("clf", SVC(probability=True, class_weight='balanced', random_state=42))
+        ]),
+        "XGBoost": Pipeline([
+            ("scaler", StandardScaler()),
+            ("clf", XGBClassifier(use_label_encoder=False, eval_metric="mlogloss", random_state=42))
+        ])
+    }
 
-        input_data = np.array([[ram, storage, display_res_value, chipset_val]])
+    best_score = 0
+    best_model = None
+    best_name = ""
 
-        prediction = model.predict(input_data)[0]
-        prediction_label = label_map.get(int(prediction), "Unknown")
+    print("Starting MLflow experiment...")
+    experiment_id = setup_experiment(EXPERIMENT_NAME)
 
-        with open(ACCURACY_PATH, "r") as f:
-            acc = round(float(f.read()) * 100, 2)
+    for name, model in models.items():
+        print(f"Training {name}...")
+        with mlflow.start_run(experiment_id=experiment_id, run_name=name):
+            model.fit(X_train, y_train)
+            preds = model.predict(X_test)
+            acc = accuracy_score(y_test, preds)
+            f1 = f1_score(y_test, preds, average='weighted')
 
-        return templates.TemplateResponse("index.html", {
-            "request": request,
-            "prediction": prediction_label,
-            "error": None,
-            "accuracy": acc,
-            "chipset_list": chipset_list,
-            "resolution_list": resolution_list,
-            "selected_chipset": chipset,
-            "selected_resolution": display_resolution,
-            "ram": ram,
-            "storage": storage
-        })
-    except Exception as e:
-        return templates.TemplateResponse("index.html", {
-            "request": request,
-            "prediction": None,
-            "error": str(e),
-            "accuracy": None,
-            "chipset_list": chipset_list,
-            "resolution_list": resolution_list,
-            "selected_chipset": chipset,
-            "selected_resolution": display_resolution,
-            "ram": ram,
-            "storage": storage
-        })
+            mlflow.log_param("model_name", name)
+            mlflow.log_metric("accuracy", acc)
+            mlflow.log_metric("f1_score_weighted", f1)
+
+            if f1 > best_score:
+                best_score = f1
+                best_model = model
+                best_name = name
+
+    print(f"Best model: {best_name} (F1-score weighted: {best_score:.4f})")
+
+    print("Saving model...")
+    joblib.dump(best_model, os.path.join(MODEL_DIR, "price_range_model.pkl"))
+
+    print("Saving accuracy and metadata...")
+    with open(os.path.join(MODEL_DIR, "accuracy.txt"), "w") as f:
+        f.write(str(best_score))
+
+    meta = {
+        "chipset_list": sorted(df['chipset'].dropna().unique().tolist()),
+        "resolution_list": ["720p", "1080p", "2k+"],
+        "best_model": best_name,
+        "best_model_metric_score": best_score,
+        "metric_used": "f1_score_weighted",
+        "label_mapping": inverse_mapping
+    }
+
+    with open(os.path.join(MODEL_DIR, "meta.json"), "w") as f:
+        json.dump(meta, f, indent=4)
+
+    print("Training complete!")
+
+
+if __name__ == "__main__":
+    train()

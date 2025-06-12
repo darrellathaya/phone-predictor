@@ -9,7 +9,7 @@
 [![LinkedIn][linkedin-shield]][linkedin-url]
 
 <!-- ABOUT THE PROJECT -->
-## 📦 About The Project
+## About The Project
 
 This project is a simple **machine learning pipeline** that trains a model to predict the price range of mobile phones using structured input features. It demonstrates:
 
@@ -22,7 +22,7 @@ You can trigger retraining by updating the dataset (`data/raw/train.csv`) or run
 
 
 <!-- BUILT WITH -->
-## 🛠️ Built With
+## Built With
 
 * [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 * [scikit-learn](https://scikit-learn.org/)
@@ -30,13 +30,13 @@ You can trigger retraining by updating the dataset (`data/raw/train.csv`) or run
 
 
 <!-- GETTING STARTED -->
-## 🚀 Getting Started
+## Getting Started
 
 These instructions will help you set up the project locally and run it manually. GitHub Actions will automatically retrain the model whenever you update `train.csv`.
 
 
 <!-- INSTALLATION -->
-### 📦 Installation
+### Installation
 
 1. Clone the repo
    ```sh
@@ -47,6 +47,14 @@ These instructions will help you set up the project locally and run it manually.
    ```sh
    pip install -r requirements.txt
    
+
+<!-- PREREQUISITES -->
+### Prerequisites
+
+1. 
+2. Register & Login to SonarQube Cloud
+ 
+
 
 <!-- USAGE EXAMPLES -->
 ## Usage
