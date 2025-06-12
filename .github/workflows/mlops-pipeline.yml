@@ -22,16 +22,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run training script
-        env:
-            MLFLOW_TRACKING_URI: file://./mlruns
-        run: python src/train_model.py
-
       - name: Upload mlruns as artifact
         uses: actions/upload-artifact@v4
         with:
           name: mlruns
-          path: /tmp/mlruns
+          path: mlruns/
+
+      - name: Upload model files as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: models
+          path: models/
 
       
   model-test:
