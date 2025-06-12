@@ -19,13 +19,13 @@ def test_train_function_runs(
     mock_joblib_dump,
     mock_read_csv
 ):
-    # Fake input data
+    # Fake input data with all 3 classes
     data = {
-        "ram": [4, 6, 8, 4],
-        "storage": [64, 128, 256, 64],
-        "display_resolution": ["720p", "1080p", "2k+", "720p"],
-        "chipset": ["Snapdragon 8 Gen 3", "Apple A14", "Helio G99", "Tensor G3"],
-        "price_range": ["Low", "Medium", "High", "Low"]
+        "ram": [4, 6, 8, 4, 12, 8],
+        "storage": [64, 128, 256, 64, 512, 256],
+        "display_resolution": ["720p", "1080p", "2k+", "720p", "1080p", "2k+"],
+        "chipset": ["Snapdragon 8 Gen 3", "Apple A14", "Helio G99", "Tensor G3", "Snapdragon 8 Gen 2", "Dimensity 9200"],
+        "price_range": ["Low", "Medium", "High", "Low", "Medium", "High"]
     }
     mock_read_csv.return_value = pd.DataFrame(data)
 
@@ -37,7 +37,6 @@ def test_train_function_runs(
 
     # Act
     train()
-
 
     # Assert MLflow and joblib interactions
     assert mock_read_csv.called
