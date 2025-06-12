@@ -106,6 +106,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
+          PYTHONPATH=. pytest
           pip install coverage pytest
           coverage run -m pytest tests/
           coverage xml
