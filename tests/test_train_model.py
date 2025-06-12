@@ -1,25 +1,32 @@
-
-import os
+import pytest
 import pandas as pd
-from train import train
+from train_model import resolution_to_value, chipset_score, preprocess_data
 
-def test_train_runs(tmp_path, monkeypatch):
-    # Setup fake data directory
-    data_dir = tmp_path / "data" / "raw"
-    os.makedirs(data_dir)
-    df = pd.DataFrame({
-        "ram": [4, 6, 8, 4],
-        "storage": [64, 128, 256, 64],
-        "display_resolution": ["720p", "1080p", "2k+", "720p"],
-        "chipset": ["snapdragon 765", "snapdragon 888", "apple a16", "kirin"],
-        "price_range": ["budget", "mid", "flagship", "budget"]
-    })
-    df.to_csv(data_dir / "train.csv", index=False)
+def test_resolution_to_value():
+    assert resolution_to_value("720p") == 720
+    assert resolution_to_value("1080p") == 1080
+    assert resolution_to_value("2k+") == 2000
+    assert resolution_to_value("unknown") == 720  # default fallback
 
-    # Monkeypatch constants
-    monkeypatch.setattr("train.DATA_PATH", str(data_dir / "train.csv"))
-    monkeypatch.setattr("train.MODEL_DIR", str(tmp_path / "models"))
-    monkeypatch.setattr("train.EXPERIMENT_NAME", "TestExp")
+def test_chipset_score():
+    assert chipset_score("Snapdragon 8 Gen 3") == 850
+    assert chipset_score("Apple A14") == 770
+    assert chipset_score("UnknownChipset") == 400  # default fallback
 
-    # Run training
-    train()
+def test_preprocess_data():
+    # Sample data
+    data = {
+        "ram": [4, 6],
+        "storage": [64, 128],
+        "display_resolution": ["720p", "1080p"],
+        "chipset": ["Snapdragon 8 Gen 3", "Apple A14"],
+        "price_range": ["Low", "High"]
+    }
+    df = pd.DataFrame(data)
+
+    X, y = preprocess_data(df.copy())
+
+    assert X.shape == (2, 4)
+    assert y.tolist() == ["Low", "High"]
+    assert "display_resolution_cat" in X.columns
+    assert "chipset_score" in X.columns

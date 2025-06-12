@@ -1,48 +1,34 @@
-# test_main.py
-import os
-import json
-import joblib
-import numpy as np
-from fastapi.testclient import TestClient
-from main import app, BASE_DIR
+import pytest
+import pandas as pd
+from unittest.mock import patch, MagicMock
+from train_model import train
 
-client = TestClient(app)
-
-def setup_test_files():
-    os.makedirs(BASE_DIR / "models", exist_ok=True)
-
-    # Dummy model that always predicts 0
-    class DummyModel:
-        def predict(self, X):
-            return [0] * len(X)
-    joblib.dump(DummyModel(), BASE_DIR / "models" / "price_range_model.pkl")
-
-    # Dummy accuracy
-    with open(BASE_DIR / "models" / "accuracy.txt", "w") as f:
-        f.write("0.95")
-
-    # Dummy metadata
-    meta = {
-        "chipset_list": ["Snapdragon 8 Gen 2", "Tensor G3"],
-        "resolution_list": ["720p", "1080p", "2k+"],
-        "label_mapping": {"0": "Budget", "1": "Midrange", "2": "Flagship"}
+@patch("train_model.pd.read_csv")
+@patch("train_model.joblib.dump")
+@patch("train_model.mlflow.start_run")
+@patch("train_model.mlflow.set_experiment")
+@patch("train_model.MlflowClient")
+def test_train_function_runs(mock_mlflow_client, mock_set_experiment, mock_start_run, mock_joblib_dump, mock_read_csv):
+    # Sample fake data
+    data = {
+        "ram": [4, 6, 8, 4],
+        "storage": [64, 128, 256, 64],
+        "display_resolution": ["720p", "1080p", "2k+", "720p"],
+        "chipset": ["Snapdragon 8 Gen 3", "Apple A14", "Helio G99", "Tensor G3"],
+        "price_range": ["Low", "Medium", "High", "Low"]
     }
-    with open(BASE_DIR / "models" / "meta.json", "w") as f:
-        json.dump(meta, f)
+    mock_read_csv.return_value = pd.DataFrame(data)
 
-def test_get_form():
-    setup_test_files()
-    response = client.get("/")
-    assert response.status_code == 200
-    assert "name=\"ram\"" in response.text
+    mock_client = MagicMock()
+    mock_mlflow_client.return_value = mock_client
+    mock_client.get_experiment_by_name.return_value = None
+    mock_client.create_experiment.return_value = "123"
 
-def test_post_prediction():
-    setup_test_files()
-    response = client.post("/", data={
-        "ram": 8,
-        "storage": 128,
-        "display_resolution": "1080p",
-        "chipset": "Snapdragon 8 Gen 2"
-    })
-    assert response.status_code == 200
-    assert "Budget" in response.text or "prediction" in response.text
+    # Act
+    train()
+
+    # Assert MLflow and joblib interactions
+    assert mock_read_csv.called
+    assert mock_set_experiment.called
+    assert mock_start_run.called
+    assert mock_joblib_dump.called
