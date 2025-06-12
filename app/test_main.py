@@ -8,7 +8,8 @@ import numpy as np
 import json
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="templates/static"), name="static")
+BASE_DIR = Path(__file__).resolve().parent.parent  # Goes up from app/ to root
+app.mount("/static", StaticFiles(directory=BASE_DIR / "templates" / "static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # Paths
