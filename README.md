@@ -72,30 +72,33 @@ These instructions will help you set up the project locally and run it manually.
 ## Project Directory
 ```sh
 .
-├── app/
-│   ├── _pycache_/
-│   │   ├── main.cpython-312.pyc
-│   │   └── main.cpython-313.pyc
-│   └── main.py
-├── data/
-│   └── raw/
-│       └── train.csv
-├── models/
-│   ├── accuracy.txt
-│   ├── chipset_encoder.pkl
-│   ├── meta.json
-│   ├── model.pkl
-│   └── regression_metrics.txt
-├── src/
-├── _pycache_/
-│   │   ├── main.cpython-312.pyc
-│   ├── model.py
-│   ├── train.py
-├── templates/
-│   └── index.html
-├── Dockerfile
-├── README.md
-└── requirements.txt
+├── github/
+│   └── workflows/
+│       └── mlops-pipeline.yml
+└── webapp/
+    ├── app/
+    │   ├── _pycache_/
+    │   │   └── main.cpython-313.pyc
+    │   ├── main.py
+    │   └── main.test.py
+    ├── data/
+    │   └── raw/
+    │       └── train.csv
+    ├── mlartifacts
+    ├── mlruns
+    ├── models/
+    │   ├── accuracy.txt
+    │   ├── label_encode.json
+    │   ├── meta.json
+    │   └── price_range_model.pkl
+    ├── src/
+    │   ├── train_model.py
+    │   └── train_model.test.py
+    ├── templates/
+    │   └── index.html
+    ├── Dockerfile
+    ├── requirements.txt
+    └── sonar-project.properties
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
