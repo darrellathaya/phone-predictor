@@ -1,6 +1,7 @@
 import pytest
 import pandas as pd
-from train_model import resolution_to_value, chipset_score, preprocess_data
+from src.train_model import resolution_to_value, chipset_score, preprocess_data
+
 
 def test_resolution_to_value():
     assert resolution_to_value("720p") == 720
