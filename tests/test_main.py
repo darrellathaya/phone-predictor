@@ -1,26 +1,26 @@
 import pytest
 import pandas as pd
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from src.train_model import train
 
-@patch("src.train_model.MlflowClient")
-@patch("src.train_model.mlflow.set_experiment")
-@patch("src.train_model.mlflow.start_run")
-@patch("src.train_model.mlflow.log_metric")
-@patch("src.train_model.mlflow.log_param")
-@patch("src.train_model.joblib.dump")
 @patch("src.train_model.pd.read_csv")
+@patch("src.train_model.joblib.dump")
+@patch("src.train_model.mlflow.log_param")
+@patch("src.train_model.mlflow.log_metric")
+@patch("src.train_model.mlflow.start_run")
+@patch("src.train_model.mlflow.set_experiment")
+@patch("src.train_model.MlflowClient")
 def test_train_function_runs(
-    mock_read_csv,
-    mock_joblib_dump,
-    mock_log_param,
-    mock_log_metric,
-    mock_start_run,
+    mock_mlflow_client,
     mock_set_experiment,
-    mock_mlflow_client
+    mock_start_run,
+    mock_log_metric,
+    mock_log_param,
+    mock_joblib_dump,
+    mock_read_csv
 ):
     # --- Arrange ---
-    # Simulate input DataFrame with all three classes
+    # Simulated dataset for coverage
     mock_read_csv.return_value = pd.DataFrame({
         "ram": [4, 6, 8, 4, 12, 8],
         "storage": [64, 128, 256, 64, 512, 256],
@@ -29,9 +29,8 @@ def test_train_function_runs(
         "price_range": ["Low", "Medium", "High", "Low", "Medium", "High"]
     })
 
-    # Setup mock MLflow client
-    mock_client = MagicMock()
-    mock_mlflow_client.return_value = mock_client
+    # Mock MLflow experiment setup
+    mock_client = mock_mlflow_client.return_value
     mock_client.get_experiment_by_name.return_value = None
     mock_client.create_experiment.return_value = "123"
 
@@ -41,7 +40,7 @@ def test_train_function_runs(
     # --- Assert ---
     mock_read_csv.assert_called_once()
     mock_set_experiment.assert_called_once_with("PhonePricePrediction")
-    assert mock_start_run.called, "MLflow run not started"
-    assert mock_log_param.called, "MLflow parameters not logged"
-    assert mock_log_metric.called, "MLflow metrics not logged"
-    assert mock_joblib_dump.called, "Model not saved with joblib"
+    mock_start_run.assert_called_once()
+    mock_log_param.assert_called()
+    mock_log_metric.assert_called()
+    mock_joblib_dump.assert_called()
