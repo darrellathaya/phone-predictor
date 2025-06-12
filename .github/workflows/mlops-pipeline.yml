@@ -132,6 +132,11 @@ jobs:
           name: models
           path: models/
 
+      - name: Run tests with coverage
+        run: |
+          coverage run -m pytest tests/
+          coverage xml
+
       - name: Commit and push model files
         env:
           GH_TOKEN: ${{ secrets.RAILWAY_SECRET }}
