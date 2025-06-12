@@ -6,6 +6,7 @@ on:
       - main
 
 jobs:
+# First Job: Pre-Build
   pre-build:
     runs-on: ubuntu-latest
     steps:
@@ -33,8 +34,8 @@ jobs:
         with:
           name: models
           path: models/
-
-      
+  
+  # Second Job: Model Testing    
   model-test:
     runs-on: ubuntu-latest
     needs: pre-build
@@ -81,6 +82,7 @@ jobs:
         run: |
           python -c "import mlflow; mlflow.set_tracking_uri('http://127.0.0.1:5000'); print(mlflow.search_experiments())" 
   
+# Third Job: Code Testing
   code-test:
     runs-on: ubuntu-latest
     needs: pre-build
@@ -96,6 +98,7 @@ jobs:
             -Dsonar.host.url=https://sonarcloud.io
             -Dsonar.python.version=3.10
 
+# Fourth Job: Build and Deploy
   build-and-deploy:
     runs-on: ubuntu-latest
     needs: [pre-build, model-test, code-test]
