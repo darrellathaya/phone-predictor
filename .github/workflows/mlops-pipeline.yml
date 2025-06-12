@@ -104,7 +104,7 @@ jobs:
       
       - name: Run tests with coverage
         run: |
-          cd webapp
+          cd app
           coverage run -m pytest
           coverage xml
 
