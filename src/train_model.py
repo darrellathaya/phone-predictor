@@ -12,19 +12,18 @@ from xgboost import XGBClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from imblearn.over_sampling import SMOTE
-import mlflow
-from mlflow import MlflowClient
+
 
 # === Constants ===
 DATA_PATH = os.path.join("data", "raw", "train.csv")
 MODEL_DIR = "models"
-EXPERIMENT_NAME = "PhonePricePrediction"
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 
 # === Helper Functions ===
 def resolution_to_value(res_str: str) -> int:
     return {"720p": 720, "1080p": 1080, "2k+": 2000}.get(res_str, 720)
+
 
 def chipset_score(chipset: str) -> int:
     chipset = chipset.lower()
@@ -41,27 +40,12 @@ def chipset_score(chipset: str) -> int:
             return scores[key]
     return 400
 
+
 def preprocess_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
     df['display_resolution_cat'] = df['display_resolution'].map(resolution_to_value)
     df['chipset_score'] = df['chipset'].map(chipset_score)
     return df[['ram', 'storage', 'display_resolution_cat', 'chipset_score']], df['price_range']
 
-def setup_experiment(experiment_name: str) -> str:
-    mlflow.set_tracking_uri("file:./mlruns")
-    client = MlflowClient()
-    experiment = client.get_experiment_by_name(experiment_name)
-
-    if experiment:
-        experiment_id = experiment.experiment_id
-    else:
-        artifact_path = os.path.abspath(f"./mlruns/{experiment_name}")
-        experiment_id = client.create_experiment(
-            name=experiment_name,
-            artifact_location=f"file://{artifact_path}"
-        )
-
-    mlflow.set_experiment(experiment_name)
-    return experiment_id
 
 # === Main Training Logic ===
 def train():
@@ -108,25 +92,21 @@ def train():
     best_model = None
     best_name = ""
 
-    print("Starting MLflow experiment...")
-    experiment_id = setup_experiment(EXPERIMENT_NAME)
+    print("Training models...")
 
     for name, model in models.items():
         print(f"Training {name}...")
-        with mlflow.start_run(experiment_id=experiment_id, run_name=name):
-            model.fit(X_train, y_train)
-            preds = model.predict(X_test)
-            acc = accuracy_score(y_test, preds)
-            f1 = f1_score(y_test, preds, average='weighted')
+        model.fit(X_train, y_train)
+        preds = model.predict(X_test)
+        acc = accuracy_score(y_test, preds)
+        f1 = f1_score(y_test, preds, average='weighted')
 
-            mlflow.log_param("model_name", name)
-            mlflow.log_metric("accuracy", acc)
-            mlflow.log_metric("f1_score_weighted", f1)
+        print(f"{name} - Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
 
-            if f1 > best_score:
-                best_score = f1
-                best_model = model
-                best_name = name
+        if f1 > best_score:
+            best_score = f1
+            best_model = model
+            best_name = name
 
     print(f"Best model: {best_name} (F1-score weighted: {best_score:.4f})")
 
