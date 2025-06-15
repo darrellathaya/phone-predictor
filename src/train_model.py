@@ -12,6 +12,7 @@ from xgboost import XGBClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from imblearn.over_sampling import SMOTE
+import mlflow  # ✅ Make sure this is present
 from mlflow.tracking import MlflowClient
 
 
