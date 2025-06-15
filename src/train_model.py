@@ -95,8 +95,7 @@ def train():
     best_name = ""
 
     # === ✅ MLflow logging ===
-    mlflow.set_experiment("phone-price-prediction")
-    with mlflow.start_run():
+    with mlflow.start_run("phone-price-prediction"):
         print("Training models...")
 
         for name, model in models.items():
