@@ -1,15 +1,15 @@
 import pytest
 import pandas as pd
 from unittest.mock import patch
-from src.main import train
+from app.main import train
 
-@patch("src.main.pd.read_csv")
-@patch("src.main.joblib.dump")
-@patch("src.main.mlflow.log_param")
-@patch("src.main.mlflow.log_metric")
-@patch("src.main.mlflow.start_run")
-@patch("src.main.mlflow.set_experiment")
-@patch("src.main.MlflowClient")
+@patch("app.main.pd.read_csv")
+@patch("app.main.joblib.dump")
+@patch("app.main.mlflow.log_param")
+@patch("app.main.mlflow.log_metric")
+@patch("app.main.mlflow.start_run")
+@patch("app.main.mlflow.set_experiment")
+@patch("app.main.MlflowClient")
 def test_train_function_runs_main_script(
     mock_mlflow_client,
     mock_set_experiment,
