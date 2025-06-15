@@ -94,45 +94,55 @@ def train():
     best_model = None
     best_name = ""
 
-    print("Training models...")
+    # === ✅ MLflow logging ===
+    mlflow.set_experiment("phone-price-prediction")
+    with mlflow.start_run():
+        print("Training models...")
 
-    for name, model in models.items():
-        print(f"Training {name}...")
-        model.fit(X_train, y_train)
-        preds = model.predict(X_test)
-        acc = accuracy_score(y_test, preds)
-        f1 = f1_score(y_test, preds, average='weighted')
+        for name, model in models.items():
+            print(f"Training {name}...")
+            model.fit(X_train, y_train)
+            preds = model.predict(X_test)
+            acc = accuracy_score(y_test, preds)
+            f1 = f1_score(y_test, preds, average='weighted')
 
-        print(f"{name} - Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
+            print(f"{name} - Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
 
-        if f1 > best_score:
-            best_score = f1
-            best_model = model
-            best_name = name
+            mlflow.log_metric(f"{name}_accuracy", acc)
+            mlflow.log_metric(f"{name}_f1_score", f1)
 
-    print(f"Best model: {best_name} (F1-score weighted: {best_score:.4f})")
+            if f1 > best_score:
+                best_score = f1
+                best_model = model
+                best_name = name
 
-    print("Saving model...")
-    joblib.dump(best_model, os.path.join(MODEL_DIR, "price_range_model.pkl"))
+        print(f"Best model: {best_name} (F1-score weighted: {best_score:.4f})")
 
-    print("Saving accuracy and metadata...")
-    with open(os.path.join(MODEL_DIR, "accuracy.txt"), "w") as f:
-        f.write(str(best_score))
+        mlflow.log_param("best_model", best_name)
+        mlflow.log_metric("best_model_f1_score", best_score)
 
-    meta = {
-        "chipset_list": sorted(df['chipset'].dropna().unique().tolist()),
-        "resolution_list": ["720p", "1080p", "2k+"],
-        "best_model": best_name,
-        "best_model_metric_score": best_score,
-        "metric_used": "f1_score_weighted",
-        "label_mapping": inverse_mapping
-    }
+        print("Saving model...")
+        model_path = os.path.join(MODEL_DIR, "price_range_model.pkl")
+        joblib.dump(best_model, model_path)
+        mlflow.log_artifact(model_path)
 
-    with open(os.path.join(MODEL_DIR, "meta.json"), "w") as f:
-        json.dump(meta, f, indent=4)
+        print("Saving accuracy and metadata...")
+        acc_path = os.path.join(MODEL_DIR, "accuracy.txt")
+        with open(acc_path, "w") as f:
+            f.write(str(best_score))
+        mlflow.log_artifact(acc_path)
 
-    print("Training complete!")
+        meta = {
+            "chipset_list": sorted(df['chipset'].dropna().unique().tolist()),
+            "resolution_list": ["720p", "1080p", "2k+"],
+            "best_model": best_name,
+            "best_model_metric_score": best_score,
+            "metric_used": "f1_score_weighted",
+            "label_mapping": inverse_mapping
+        }
+        meta_path = os.path.join(MODEL_DIR, "meta.json")
+        with open(meta_path, "w") as f:
+            json.dump(meta, f, indent=4)
+        mlflow.log_artifact(meta_path)
 
-
-if __name__ == "__main__":
-    train()
+        print("Training complete!")
