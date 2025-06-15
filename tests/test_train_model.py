@@ -1,8 +1,15 @@
 import pytest
 import pandas as pd
-from src.train_model import resolution_to_value, chipset_score, preprocess_data
+from unittest.mock import patch
+from src.train_model import train
 
-
+@patch("src.train_model.pd.read_csv")
+@patch("src.train_model.joblib.dump")
+@patch("src.train_model.mlflow.log_param")
+@patch("src.train_model.mlflow.log_metric")
+@patch("src.train_model.mlflow.start_run")
+@patch("src.train_model.mlflow.set_experiment")
+@patch("src.train_model.MlflowClient")
 def test_resolution_to_value():
     assert resolution_to_value("720p") == 720
     assert resolution_to_value("1080p") == 1080
