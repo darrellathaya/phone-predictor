@@ -33,7 +33,7 @@ def test_train_function_runs(mock_joblib_dump, mock_read_csv, tmp_path):
     # Mock train_test_split output
     X_train = pd.DataFrame([[4, 64, 720, 850], [6, 128, 1080, 800]])
     y_train = pd.Series([0, 1])
-    X_test = pd.DataFrame([[8]][[256]][[2000]][[500]])
+    X_test = pd.DataFrame([[8, 256, 2000, 500]])
     y_test = pd.Series([2])
 
     with patch("src.train_model.train_test_split", return_value=(X_train, X_test, y_train, y_test)):
