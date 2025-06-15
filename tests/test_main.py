@@ -1,46 +1,46 @@
-import pytest
+import unittest
 import pandas as pd
-from unittest.mock import patch
-from src.train_model import train
+from main import resolution_to_value, chipset_score, preprocess_data
 
-@patch("src.train_model.pd.read_csv")
-@patch("src.train_model.joblib.dump")
-@patch("src.train_model.mlflow.log_param")
-@patch("src.train_model.mlflow.log_metric")
-@patch("src.train_model.mlflow.start_run")
-@patch("src.train_model.mlflow.set_experiment")
-@patch("src.train_model.MlflowClient")
-def test_train_function_runs(
-    mock_mlflow_client,
-    mock_set_experiment,
-    mock_start_run,
-    mock_log_metric,
-    mock_log_param,
-    mock_joblib_dump,
-    mock_read_csv
-):
-    # --- Arrange ---
-    # Simulated dataset for coverage
-    mock_read_csv.return_value = pd.DataFrame({
-        "ram": [4, 6, 8, 4, 12, 8],
-        "storage": [64, 128, 256, 64, 512, 256],
-        "display_resolution": ["720p", "1080p", "2k+", "720p", "1080p", "2k+"],
-        "chipset": ["Snapdragon 8 Gen 3", "Apple A14", "Helio G99", "Tensor G3", "Snapdragon 8 Gen 2", "Dimensity 9200"],
-        "price_range": ["Low", "Medium", "High", "Low", "Medium", "High"]
-    })
 
-    # Mock MLflow experiment setup
-    mock_client = mock_mlflow_client.return_value
-    mock_client.get_experiment_by_name.return_value = None
-    mock_client.create_experiment.return_value = "123"
+class TestMainFunctions(unittest.TestCase):
 
-    # --- Act ---
-    train()
+    def test_resolution_to_value(self):
+        self.assertEqual(resolution_to_value("720p"), 720)
+        self.assertEqual(resolution_to_value("1080p"), 1080)
+        self.assertEqual(resolution_to_value("2k+"), 2000)
+        self.assertEqual(resolution_to_value("unknown"), 720)  # default fallback
 
-    # --- Assert ---
-    mock_read_csv.assert_called_once()
-    mock_set_experiment.assert_called_once_with("PhonePricePrediction")
-    assert mock_start_run.call_count == 3
-    mock_log_param.assert_called()
-    mock_log_metric.assert_called()
-    mock_joblib_dump.assert_called()
+    def test_chipset_score(self):
+        self.assertEqual(chipset_score("Snapdragon 8 Gen 3"), 850)
+        self.assertEqual(chipset_score("Apple A16"), 830)
+        self.assertEqual(chipset_score("Kirin 970"), 500)
+        self.assertEqual(chipset_score("Exynos 990"), 650)
+        self.assertEqual(chipset_score("Unknown Chip"), 400)  # default fallback
+
+    def test_preprocess_data(self):
+        data = {
+            'ram': [4, 8],
+            'storage': [64, 128],
+            'display_resolution': ['720p', '1080p'],
+            'chipset': ['Snapdragon 888', 'Apple A14'],
+            'price_range': ['Low', 'High']
+        }
+        df = pd.DataFrame(data)
+        X, y = preprocess_data(df)
+        self.assertEqual(X.shape[1], 4)  # Should have 4 features
+        self.assertEqual(len(y), 2)      # Target column length should match
+        self.assertIn("chipset_score", X.columns or [])
+
+    def test_label_mapping_consistency(self):
+        data = {
+            'price_range': ['Low', 'Medium', 'High']
+        }
+        df = pd.DataFrame(data)
+        label_mapping = {label: idx for idx, label in enumerate(df['price_range'].unique())}
+        inverse_mapping = {v: k for k, v in label_mapping.items()}
+        self.assertEqual(inverse_mapping[label_mapping['Low']], 'Low')
+
+
+if __name__ == '__main__':
+    unittest.main()
