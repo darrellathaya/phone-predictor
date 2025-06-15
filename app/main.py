@@ -152,5 +152,8 @@ def train():
     print("Training complete!")
 
 
+def main():
+    train()
+    
 if __name__ == "__main__":
     train()

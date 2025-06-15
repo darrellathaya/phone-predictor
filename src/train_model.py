@@ -12,7 +12,7 @@ from xgboost import XGBClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from imblearn.over_sampling import SMOTE
-import mlflow  # ✅ Make sure this is present
+import mlflow
 from mlflow.tracking import MlflowClient
 
 
@@ -89,7 +89,7 @@ def train():
         ])
     }
 
-    mlflow.set_experiment("PhonePricePrediction")  # ✅ ensure experiment exists
+    mlflow.set_experiment("PhonePricePrediction")
 
     best_score = 0
     best_model = None
@@ -98,7 +98,7 @@ def train():
     print("Training models...")
 
     for name, model in models.items():
-        with mlflow.start_run(run_name=name):  # ✅ per-model run
+        with mlflow.start_run(run_name=name):
             print(f"Training {name}...")
             model.fit(X_train, y_train)
             preds = model.predict(X_test)

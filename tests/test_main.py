@@ -2,6 +2,7 @@ import pytest
 import pandas as pd
 from unittest.mock import patch
 from src.train_model import train
+from src import main as main_module 
 
 @patch("src.train_model.pd.read_csv")
 @patch("src.train_model.joblib.dump")
@@ -44,3 +45,8 @@ def test_train_function_runs(
     mock_log_param.assert_called()
     mock_log_metric.assert_called()
     mock_joblib_dump.assert_called()
+
+@patch("src.main.train")
+def test_main_runs(mock_train):
+    main_module.main()
+    mock_train.assert_called_once()
