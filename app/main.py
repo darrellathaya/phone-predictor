@@ -15,14 +15,11 @@ from imblearn.over_sampling import SMOTE
 import mlflow
 from mlflow import MlflowClient
 
-# === Constants ===
 DATA_PATH = os.path.join("data", "raw", "train.csv")
 MODEL_DIR = "models"
 EXPERIMENT_NAME = "PhonePricePrediction"
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-
-# === Helper Functions ===
 def resolution_to_value(res_str: str) -> int:
     return {"720p": 720, "1080p": 1080, "2k+": 2000}.get(res_str, 720)
 
@@ -62,8 +59,6 @@ def setup_experiment(experiment_name: str) -> str:
     mlflow.set_experiment(experiment_name)
     return experiment_id
 
-
-# === Main Training Logic ===
 def train():
     print("Loading data...")
     df = pd.read_csv(DATA_PATH)
@@ -80,7 +75,6 @@ def train():
     print("Class distribution before SMOTE:")
     print(y_train.value_counts(normalize=True))
 
-    # Apply SMOTE if appropriate
     try:
         smote = SMOTE(random_state=42)
         X_train, y_train = smote.fit_resample(X_train, y_train)
@@ -130,10 +124,8 @@ def train():
 
     print(f"Best model: {best_name} (F1-score weighted: {best_score:.4f})")
 
-    print("Saving model...")
     joblib.dump(best_model, os.path.join(MODEL_DIR, "price_range_model.pkl"))
 
-    print("Saving accuracy and metadata...")
     with open(os.path.join(MODEL_DIR, "accuracy.txt"), "w") as f:
         f.write(str(best_score))
 
@@ -150,10 +142,3 @@ def train():
         json.dump(meta, f, indent=4)
 
     print("Training complete!")
-
-
-def main():
-    train()
-    
-if __name__ == "__main__":
-    train()
