@@ -86,7 +86,7 @@ def train():
         ]),
         "XGBoost": Pipeline([
             ("scaler", StandardScaler()),
-            ("clf", XGBClassifier(use_label_encoder=False, eval_metric="mlogloss", random_state=42))
+            ("clf", XGBClassifier(eval_metric="mlogloss", random_state=42))
         ])
     }
 
