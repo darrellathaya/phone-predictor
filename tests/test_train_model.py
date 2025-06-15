@@ -8,6 +8,9 @@ from unittest.mock import patch, mock_open, MagicMock
 # Adjust based on where your train function lives
 from src.train_model import train
 
+print("X_train shape:", X_train.shape)
+print("X_test shape:", X_test.shape)
+
 
 @patch("src.train_model.pd.read_csv")
 @patch("src.train_model.joblib.dump")
