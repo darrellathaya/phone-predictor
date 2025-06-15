@@ -66,7 +66,6 @@ def train():
     print("Class distribution before SMOTE:")
     print(y_train.value_counts(normalize=True))
 
-    # Apply SMOTE if appropriate
     try:
         smote = SMOTE(random_state=42)
         X_train, y_train = smote.fit_resample(X_train, y_train)
@@ -90,15 +89,16 @@ def train():
         ])
     }
 
+    mlflow.set_experiment("PhonePricePrediction")  # ✅ ensure experiment exists
+
     best_score = 0
     best_model = None
     best_name = ""
 
-    # === ✅ MLflow logging ===
-    with mlflow.start_run("phone-price-prediction"):
-        print("Training models...")
+    print("Training models...")
 
-        for name, model in models.items():
+    for name, model in models.items():
+        with mlflow.start_run(run_name=name):  # ✅ per-model run
             print(f"Training {name}...")
             model.fit(X_train, y_train)
             preds = model.predict(X_test)
@@ -107,41 +107,34 @@ def train():
 
             print(f"{name} - Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
 
-            mlflow.log_metric(f"{name}_accuracy", acc)
-            mlflow.log_metric(f"{name}_f1_score", f1)
+            mlflow.log_param("model_name", name)
+            mlflow.log_metric("accuracy", acc)
+            mlflow.log_metric("f1_weighted", f1)
 
             if f1 > best_score:
                 best_score = f1
                 best_model = model
                 best_name = name
 
-        print(f"Best model: {best_name} (F1-score weighted: {best_score:.4f})")
+    print(f"Best model: {best_name} (F1-score weighted: {best_score:.4f})")
 
-        mlflow.log_param("best_model", best_name)
-        mlflow.log_metric("best_model_f1_score", best_score)
+    print("Saving model...")
+    joblib.dump(best_model, os.path.join(MODEL_DIR, "price_range_model.pkl"))
 
-        print("Saving model...")
-        model_path = os.path.join(MODEL_DIR, "price_range_model.pkl")
-        joblib.dump(best_model, model_path)
-        mlflow.log_artifact(model_path)
+    print("Saving accuracy and metadata...")
+    with open(os.path.join(MODEL_DIR, "accuracy.txt"), "w") as f:
+        f.write(str(best_score))
 
-        print("Saving accuracy and metadata...")
-        acc_path = os.path.join(MODEL_DIR, "accuracy.txt")
-        with open(acc_path, "w") as f:
-            f.write(str(best_score))
-        mlflow.log_artifact(acc_path)
+    meta = {
+        "chipset_list": sorted(df['chipset'].dropna().unique().tolist()),
+        "resolution_list": ["720p", "1080p", "2k+"],
+        "best_model": best_name,
+        "best_model_metric_score": best_score,
+        "metric_used": "f1_score_weighted",
+        "label_mapping": inverse_mapping
+    }
 
-        meta = {
-            "chipset_list": sorted(df['chipset'].dropna().unique().tolist()),
-            "resolution_list": ["720p", "1080p", "2k+"],
-            "best_model": best_name,
-            "best_model_metric_score": best_score,
-            "metric_used": "f1_score_weighted",
-            "label_mapping": inverse_mapping
-        }
-        meta_path = os.path.join(MODEL_DIR, "meta.json")
-        with open(meta_path, "w") as f:
-            json.dump(meta, f, indent=4)
-        mlflow.log_artifact(meta_path)
+    with open(os.path.join(MODEL_DIR, "meta.json"), "w") as f:
+        json.dump(meta, f, indent=4)
 
-        print("Training complete!")
+    print("Training complete!")
