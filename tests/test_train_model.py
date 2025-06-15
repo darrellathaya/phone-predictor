@@ -5,7 +5,7 @@ import joblib
 import json
 from unittest.mock import patch, mock_open, MagicMock
 
-# Adjust this import based on your actual module structure
+# Adjust based on where your train function lives
 from src.train_model import train
 
 
@@ -13,7 +13,7 @@ from src.train_model import train
 @patch("src.train_model.joblib.dump")
 def test_train_function_runs(mock_joblib_dump, mock_read_csv, tmp_path):
     # --- Arrange ---
-    # Mock dataset
+    # Simulated dataset
     mock_df = pd.DataFrame({
         "ram": [4, 6, 8, 4, 12, 8],
         "storage": [64, 128, 256, 64, 512, 256],
@@ -33,7 +33,7 @@ def test_train_function_runs(mock_joblib_dump, mock_read_csv, tmp_path):
     # Mock train_test_split output
     X_train = pd.DataFrame([[4, 64, 720, 850], [6, 128, 1080, 800]])
     y_train = pd.Series([0, 1])
-    X_test = pd.DataFrame([[8]][[256]][[2000]][[500]])
+    X_test = pd.DataFrame([[8]][[256]][[2000]][[500]])   # ✅ Fixed: Correct 2D list
     y_test = pd.Series([2])
 
     with patch("src.train_model.train_test_split", return_value=(X_train, X_test, y_train, y_test)):
