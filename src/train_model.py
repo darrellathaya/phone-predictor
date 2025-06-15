@@ -16,8 +16,8 @@ from mlflow.tracking import MlflowClient
 
 
 # === Constants ===
-DATA_PATH = os.path.join("data", "raw", "train.csv")
-MODEL_DIR = "models"
+DATA_PATH = os.path.join("..", "data", "raw", "train.csv")
+MODEL_DIR = os.path.join("..", "models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 
