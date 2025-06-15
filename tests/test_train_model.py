@@ -8,10 +8,6 @@ from unittest.mock import patch, mock_open, MagicMock
 # Adjust based on where your train function lives
 from src.train_model import train
 
-print("X_train shape:", X_train.shape)
-print("X_test shape:", X_test.shape)
-
-
 @patch("src.train_model.pd.read_csv")
 @patch("src.train_model.joblib.dump")
 def test_train_function_runs(mock_joblib_dump, mock_read_csv, tmp_path):
@@ -38,6 +34,10 @@ def test_train_function_runs(mock_joblib_dump, mock_read_csv, tmp_path):
     y_train = pd.Series([0, 1])
     X_test = pd.DataFrame([[8, 256, 2000, 500]])
     y_test = pd.Series([2])
+
+    print("X_train shape:", X_train.shape)
+    print("X_test shape:", X_test.shape)
+
 
     with patch("src.train_model.train_test_split", return_value=(X_train, X_test, y_train, y_test)):
 
