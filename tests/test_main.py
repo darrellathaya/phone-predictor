@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from unittest import mock
 from fastapi.testclient import TestClient
-from main import (
+from app.main import (
     app,
     resolution_to_value,
     chipset_score,
