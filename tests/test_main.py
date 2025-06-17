@@ -10,6 +10,7 @@ import numpy as np
 from bs4 import BeautifulSoup
 from unittest.mock import patch, Mock, MagicMock
 from fastapi.testclient import TestClient
+from sklearn
 from app.main import app, resolution_to_value, chipset_score, preprocess_data, get_models, setup_experiment
 
 # Silence XGBoost warning if needed
@@ -59,9 +60,8 @@ def test_post_predict_success(tmp_path):
         json.dump(meta, f)
 
     # Save a dummy RandomForest that always returns [1] for predict()
-    from sklearn.ensemble import RandomForestClassifier
     dummy_model = RandomForestClassifier()
-    dummy_model.fit([[1]][[1]][[1]][[1]], [1])  # Corrected this line
+    dummy_model.fit([[1]], [1])  # Simple valid input for dummy model
     joblib.dump(dummy_model, "models/RandomForest.pkl")
 
     response = client.post("/", data={
