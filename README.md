@@ -121,6 +121,13 @@ MLFLOW
 mlflow
    ```
 
+![Screenshot 2025-06-17 183027](https://github.com/user-attachments/assets/6f29d148-164e-487e-81a9-129d9f613356)
+
+   the issues above occured because the the correct experiment was not defined properly. It was resolved by adding the following code
+   ```sh
+mlflow.set_experiment("PhonePricePrediction")
+   ```
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
