@@ -82,15 +82,15 @@ def test_train_function(mock_metric, mock_param, mock_experiment, mock_start_run
 @mock.patch("src.train_model.pd.read_csv")
 def test_smote_failure(mock_read_csv, mock_smote, capsys):
     df = pd.DataFrame({
-        'ram': [4, 4, 4],
-        'storage': [64, 64, 64],
-        'display_resolution': ['720p'] * 3,
-        'chipset': ['unknown'] * 3,
-        'price_range': ['low'] * 3  # only 1 class -> SMOTE will fail
+        'ram': [4, 6, 8, 12, 4, 6, 8, 12],
+        'storage': [64, 128, 256, 512, 64, 128, 256, 512],
+        'display_resolution': ['720p'] * 8,
+        'chipset': ['snapdragon 888', 'apple a16', 'unknown', 'kirin'] * 2,
+        'price_range': ['low', 'medium', 'high', 'medium'] * 2
     })
     mock_read_csv.return_value = df
     mock_smote.side_effect = ValueError("Need at least 2 classes")
-
+ 
     train()
 
     captured = capsys.readouterr()
