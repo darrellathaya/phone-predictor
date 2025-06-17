@@ -60,9 +60,9 @@ def test_get_models():
 def test_setup_experiment(mock_client):
     mock_instance = mock_client.return_value
     mock_instance.get_experiment_by_name.return_value = None
-    mock_instance.create_experiment.return_value = "exp_123"
+    mock_instance.create_experiment.return_value = "mock_exp_id"
     result = setup_experiment("MyTestExp")
-    assert result == "exp_123"
+    assert result == "mock_exp_id"
 
 # ---------- Integration Test: FastAPI Endpoint ----------
 
@@ -91,4 +91,6 @@ def test_predict_price(mock_joblib_load, mock_exists, mock_open):
     })
 
     assert response.status_code == 200
-    assert "Predicted price range" in response.text
+    json_response = response.json()
+    assert "result" in json_response
+    assert "Predicted price range" in json_response["result"]
