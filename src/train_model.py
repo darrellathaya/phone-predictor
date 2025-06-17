@@ -14,12 +14,14 @@ from imblearn.over_sampling import SMOTE
 import mlflow
 from mlflow import MlflowClient
 import shutil # Import shutil untuk menghapus direktori
+from pathlib import Path
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(BASE_DIR, "..", "data", "raw", "train.csv")
-MODEL_DIR = os.path.join(BASE_DIR, "..", "models")
-MLRUNS_DIR = os.path.join(BASE_DIR, "..", "mlruns")
-os.makedirs(MODEL_DIR, exist_ok=True)
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_PATH = BASE_DIR / "data" / "raw" / "train.csv"
+MODEL_DIR = BASE_DIR / "models"
+MLRUNS_DIR = BASE_DIR / "mlruns"
+MODEL_DIR.mkdir(parents=True, exist_ok=True)
 EXPERIMENT_NAME = "PhonePricePrediction"
 
 def resolution_to_value(res_str: str) -> int:
@@ -77,35 +79,30 @@ def get_models():
         "XGBoost": make_pipeline_func(XGBClassifier(eval_metric="mlogloss", random_state=42, use_label_encoder=False))
     }
 
-def clean_and_setup_mlflow_experiment(experiment_name: str, mlruns_path: str):
-    # Hapus direktori mlruns jika ada untuk memastikan state bersih
-    if os.path.exists(mlruns_path):
+def clean_and_setup_mlflow_experiment(experiment_name: str, mlruns_path: Path):
+    if mlruns_path.exists():
         print(f"Deleting existing MLruns directory: {mlruns_path}")
         try:
             shutil.rmtree(mlruns_path)
         except OSError as e:
             print(f"Error deleting MLruns directory {mlruns_path}: {e}")
-            # Jika penghapusan gagal, ini bisa menjadi masalah. Untuk CI, kita bisa mencoba melanjutkan.
     
-    # Buat ulang direktori mlruns (opsional, mlflow akan membuatnya jika tracking URI menunjuk ke sana)
-    os.makedirs(mlruns_path, exist_ok=True) # Baris ini tidak esensial jika tracking URI diset dengan benar
+    mlruns_path.mkdir(parents=True, exist_ok=True)
 
-    mlflow.set_tracking_uri(f"file:{mlruns_path}") # Set tracking URI ke path absolut atau relatif yang benar
-    
+    mlflow.set_tracking_uri(f"file:{str(mlruns_path)}")
+
     client = MlflowClient()
-    # Karena mlruns sudah bersih, kita bisa langsung membuat eksperimen baru.
-    # Tidak perlu memeriksa atau menghapus eksperimen dengan nama yang sama lagi.
     try:
         experiment_id = client.create_experiment(name=experiment_name)
         mlflow.set_experiment(experiment_name)
         print(f"Created and set new experiment '{experiment_name}' with ID: {experiment_id}")
     except mlflow.exceptions.MlflowException as e:
-        if "already exists" in str(e).lower(): # Menangani kasus jika create_experiment gagal karena sudah ada (seharusnya tidak terjadi setelah rmtree)
+        if "already exists" in str(e).lower():
             print(f"Experiment '{experiment_name}' already exists. Setting it as active.")
             mlflow.set_experiment(experiment_name)
         else:
-            print(f"Critical error creating/setting experiment '{experiment_name}': {e}")
             raise
+
 
 def train_and_evaluate(models, X_train, X_test, y_train, y_test):
     # MLRUNS_DIR didefinisikan di atas, relatif terhadap root proyek jika train_model.py di src/
@@ -163,12 +160,11 @@ def save_artifacts(best_model_object, best_model_name_val, best_overall_f1_score
     }
 
 
-    with open(os.path.join(MODEL_DIR, "meta.json"), "w") as f:
+    with open(MODEL_DIR / "meta.json", "w") as f:
         json.dump(meta, f, indent=4)
-    
-    accuracy_txt_path = os.path.join(MODEL_DIR, "accuracy.txt")
-    if os.path.exists(accuracy_txt_path):
-        os.remove(accuracy_txt_path)
+
+    accuracy_txt_path = MODEL_DIR / "accuracy.txt"
+
 
 
 def train():

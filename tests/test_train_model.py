@@ -61,7 +61,7 @@ def test_train_function(mock_metric, mock_param, mock_experiment, mock_start_run
 
     # Set temp tracking URI
     os.makedirs("/tmp/mlruns-test", exist_ok=True)
-    mlflow.set_tracking_uri("file:/tmp/mlruns-test")
+    mlflow.set_tracking_uri("file://" + os.path.abspath("mlruns"))
 
     # Prepare synthetic balanced dataset
     df = pd.DataFrame({
