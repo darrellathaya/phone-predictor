@@ -57,11 +57,14 @@ def test_post_predict_success(tmp_path):
     }
     with open("models/meta.json", "w") as f:
         json.dump(meta, f)
-        
-    mock_model = Mock()
-    mock_model.predict.return_value = [1]  # Predicts "Mid"
 
-    joblib.dump(mock_model, "models/RandomForest.pkl")
+    # Save a dummy RandomForest that always returns [1] for predict()
+    from sklearn.ensemble import RandomForestClassifier
+    dummy_model = RandomForestClassifier()
+    dummy_model.fit([[1]][[1]][[1]][[1]], [1])  # Dummy fit
+    dummy_model.predict = lambda X: np.array([1])  # Hardcoded prediction
+
+    joblib.dump(dummy_model, "models/RandomForest.pkl")
 
     response = client.post("/", data={
         "ram": 2048,
@@ -70,6 +73,7 @@ def test_post_predict_success(tmp_path):
         "chipset": "Snapdragon 888",
         "selected_model_name": "RandomForest"
     })
+
     assert response.status_code == 200
     soup = BeautifulSoup(response.text, "html.parser")
     prediction = soup.find("h5", class_="card-title")
