@@ -50,13 +50,14 @@ def test_preprocess_data(sample_dataframe):
 
 # ---------- Unit Tests: Model Utilities ----------
 
-@mock.patch("app.main.mlflow.MlflowClient")  # Correct patch path
+@mock.patch("main.MlflowClient")  # <- Adjust to match how it's imported
 def test_setup_experiment(mock_client):
     mock_instance = mock_client.return_value
     mock_instance.get_experiment_by_name.return_value = None
     mock_instance.create_experiment.return_value = "mock_exp_id"
     result = setup_experiment("MyTestExp")
     assert result == "mock_exp_id"
+
 
 # ---------- Integration Test: FastAPI Endpoint ----------
 
