@@ -59,9 +59,9 @@ def test_post_predict_success(tmp_path):
     with open("models/meta.json", "w") as f:
         json.dump(meta, f)
 
-    # Save a dummy RandomForest that always returns [1] for predict()
+    from sklearn.ensemble import RandomForestClassifier
     dummy_model = RandomForestClassifier()
-    dummy_model.fit([[1]], [1])  # Simple valid input for dummy model
+    dummy_model.fit([[1]][[1]][[1]][[1]], [1])  # Corrected line
     joblib.dump(dummy_model, "models/RandomForest.pkl")
 
     response = client.post("/", data={
