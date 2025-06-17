@@ -18,7 +18,7 @@ import shutil # Import shutil untuk menghapus direktori
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE_DIR, "..", "data", "raw", "train.csv")
 MODEL_DIR = os.path.join(BASE_DIR, "..", "models")
-MLRUNS_DIR = os.path.join(BASE_DIR, "..", "mlruns") # Path ke direktori mlruns
+MLRUNS_DIR = os.path.join(BASE_DIR, "..", "mlruns")
 os.makedirs(MODEL_DIR, exist_ok=True)
 EXPERIMENT_NAME = "PhonePricePrediction"
 
@@ -88,7 +88,7 @@ def clean_and_setup_mlflow_experiment(experiment_name: str, mlruns_path: str):
             # Jika penghapusan gagal, ini bisa menjadi masalah. Untuk CI, kita bisa mencoba melanjutkan.
     
     # Buat ulang direktori mlruns (opsional, mlflow akan membuatnya jika tracking URI menunjuk ke sana)
-    # os.makedirs(mlruns_path, exist_ok=True) # Baris ini tidak esensial jika tracking URI diset dengan benar
+    os.makedirs(mlruns_path, exist_ok=True) # Baris ini tidak esensial jika tracking URI diset dengan benar
 
     mlflow.set_tracking_uri(f"file:{mlruns_path}") # Set tracking URI ke path absolut atau relatif yang benar
     
@@ -151,15 +151,17 @@ def save_artifacts(best_model_object, best_model_name_val, best_overall_f1_score
     joblib.dump(best_model_object, os.path.join(MODEL_DIR, "price_range_model.pkl"))
 
     meta = {
-        "chipset_list": sorted(df_original['chipset'].dropna().unique().tolist()),
-        "resolution_list": ["720p", "1080p", "2k+"],
-        "best_model_name": best_model_name_val,
-        "best_model_overall_f1_score": best_overall_f1_score,
-        "model_f1_scores": all_model_f1_scores,
-        "metric_used": "f1_score_weighted",
-        "label_mapping": inverse_mapping_dict,
-        "available_trained_models": list(get_models().keys())
+    "chipset_list": sorted(df_original['chipset'].dropna().unique().tolist()),
+    "resolution_list": ["720p", "1080p", "2k+"],
+    "best_model": best_model_object.__class__.__name__,  # ✅ Add this line
+    "best_model_name": best_model_name_val,
+    "best_model_overall_f1_score": best_overall_f1_score,
+    "model_f1_scores": all_model_f1_scores,
+    "metric_used": "f1_score_weighted",
+    "label_mapping": inverse_mapping_dict,
+    "available_trained_models": list(get_models().keys())
     }
+
 
     with open(os.path.join(MODEL_DIR, "meta.json"), "w") as f:
         json.dump(meta, f, indent=4)
