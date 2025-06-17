@@ -92,8 +92,18 @@ def test_get_index_success(mock_open_file):
     assert response.status_code == 200
     assert "Snapdragon 855" in response.text
 
-@patch("app.main.open", side_effect=FileNotFoundError("missing meta"))
-def test_get_index_file_not_found(mock_open_file):
+@@patch("app.main.open", side_effect=FileNotFoundError("meta.json not found"))
+def test_get_index_file_not_found(mock_open):
     response = client.get("/")
+    
+    # Ensure the HTML page is returned
     assert response.status_code == 200
-    assert "Gagal memuat metadata awal" in response.text  # if using TemplateResponse
+    html = response.text
+
+    # Check that the fallback error message is present
+    assert "Gagal memuat metadata awal" in html
+
+    # Optional: verify fallback options are injected
+    assert "RandomForest" in html
+    assert "SVM" in html
+    assert "XGBoost" in html
