@@ -18,7 +18,6 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-
 # === Constants ===
 DATA_PATH = os.path.join("data", "raw", "train.csv")
 MODEL_DIR = "models"
