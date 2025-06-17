@@ -30,6 +30,12 @@ jobs:
         with:
           name: mlruns
           path: mlruns/
+      
+      - name: Download mlruns artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mlruns
+          path: mlruns/
 
       - name: Upload model files as artifact
         uses: actions/upload-artifact@v4
