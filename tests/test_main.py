@@ -8,7 +8,7 @@ import joblib
 import pandas as pd
 import numpy as np
 from bs4 import BeautifulSoup
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, Mock, MagicMock
 from fastapi.testclient import TestClient
 from app.main import app, resolution_to_value, chipset_score, preprocess_data, get_models, setup_experiment
 
@@ -57,8 +57,11 @@ def test_post_predict_success(tmp_path):
     }
     with open("models/meta.json", "w") as f:
         json.dump(meta, f)
-    dummy_model = get_models()["RandomForest"]
-    joblib.dump(dummy_model, "models/RandomForest.pkl")
+        
+    mock_model = Mock()
+    mock_model.predict.return_value = [1]  # Predicts "Mid"
+
+    joblib.dump(mock_model, "models/RandomForest.pkl")
 
     response = client.post("/", data={
         "ram": 2048,
