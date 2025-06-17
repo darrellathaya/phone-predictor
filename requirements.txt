@@ -2,7 +2,6 @@ fastapi
 uvicorn[standard]
 joblib
 jinja2
-xgboost
 numpy
 pandas
 scikit-learn==1.6.1

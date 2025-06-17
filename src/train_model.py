@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
-from xgboost import XGBClassifier
+
 from sklearn.pipeline import Pipeline # Pastikan ini diimpor
 from sklearn.preprocessing import StandardScaler
 from imblearn.over_sampling import SMOTE
@@ -74,7 +74,7 @@ def get_models():
     return {
         "RandomForest": make_pipeline_func(RandomForestClassifier(random_state=42, class_weight='balanced')),
         "SVM": make_pipeline_func(SVC(probability=True, class_weight='balanced', random_state=42)),
-        "XGBoost": make_pipeline_func(XGBClassifier(eval_metric="mlogloss", random_state=42, use_label_encoder=False))
+        
     }
 
 def train_and_evaluate(models, X_train, X_test, y_train, y_test):
