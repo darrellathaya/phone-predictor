@@ -25,7 +25,7 @@ jobs:
 
       - name: Train model
         run: |
-          python train_model.py
+          python src/train_model.py
 
       - name: Upload mlruns as artifact
         uses: actions/upload-artifact@v4
