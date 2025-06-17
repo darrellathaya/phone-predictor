@@ -150,6 +150,6 @@ jobs:
         with:
           commit_message: "Update trained models"
           file_pattern: "models/**"
-          commit_user_name: github-actions[bot]
-          commit_user_email: github-actions[bot]@users.noreply.github.com
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
