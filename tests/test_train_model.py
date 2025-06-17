@@ -17,11 +17,11 @@ from src.train_model import (
 @pytest.fixture
 def sample_dataframe():
     return pd.DataFrame({
-        'ram': [4, 6, 8],
-        'storage': [64, 128, 256],
-        'display_resolution': ['720p', '1080p', '2k+'],
-        'chipset': ['snapdragon 888', 'apple a16', 'unknown'],
-        'price_range': ['low', 'medium', 'high']
+        'ram': [4, 6, 8, 12, 4, 6, 8, 12, 4, 6, 8, 12],
+        'storage': [64, 128, 256, 512] * 3,
+        'display_resolution': ['720p'] * 12,
+        'chipset': ['snapdragon 888', 'apple a16', 'unknown', 'kirin'] * 3,
+        'price_range': ['low', 'medium', 'high'] * 4
     })
 
 
@@ -88,11 +88,11 @@ def test_train_function(mock_metric, mock_param, mock_experiment, mock_start_run
 @mock.patch("src.train_model.pd.read_csv")
 def test_smote_failure(mock_read_csv, mock_smote, capsys):
     df = pd.DataFrame({
-        'ram': [4] * 12,
-        'storage': [64] * 12,
+        'ram': [4, 6, 8, 12, 4, 6, 8, 12, 4, 6, 8, 12],
+        'storage': [64, 128, 256, 512] * 3,
         'display_resolution': ['720p'] * 12,
-        'chipset': ['snapdragon 888'] * 12,
-        'price_range': ['low'] * 12
+        'chipset': ['snapdragon 888', 'apple a16', 'unknown', 'kirin'] * 3,
+        'price_range': ['low', 'medium', 'high'] * 4
     })
     mock_read_csv.return_value = df
     mock_smote.side_effect = ValueError("Need at least 2 classes")
