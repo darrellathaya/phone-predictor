@@ -73,11 +73,16 @@ def test_post_predict_success(tmp_path):
         "selected_model_name": "RandomForest"
     })
 
+    # Debugging: Print response details
+    print("Response status code:", response.status_code)
+    print("Response HTML:", response.text)
+
+    # Assertions
     assert response.status_code == 200
     soup = BeautifulSoup(response.text, "html.parser")
     prediction = soup.find("h5", class_="card-title")
-    assert prediction is not None
-    assert any(label in prediction.text for label in ["Low", "Mid", "High"])
+    assert prediction is not None, "Expected <h5> element with class 'card-title' not found in response."
+    assert any(label in prediction.text for label in ["Low", "Mid", "High"]), "Unexpected prediction value."
 
 
 def test_post_predict_missing_model_file():
