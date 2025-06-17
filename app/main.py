@@ -75,19 +75,22 @@ async def read_index(request: Request):
         context["resolution_list"] = meta.get("resolution_list", [])
         context["available_models"] = meta.get("available_trained_models", [])
         context["best_model_overall_name"] = meta.get("best_model_name")
-        
         default_selection = meta.get("best_model_name")
         if default_selection and default_selection in context["available_models"]:
             context["selected_model_name"] = default_selection
         elif context["available_models"]:
             context["selected_model_name"] = context["available_models"][0]
-
     except Exception as e:
-        context["error"] = f"Gagal memuat metadata awal: {str(e)}. Pastikan file 'models/meta.json' ada."
+        context["error"] = "Gagal memuat metadata awal"
         context["available_models"] = ["RandomForest", "SVM", "XGBoost"]
         if context["available_models"]:
-             context["selected_model_name"] = context["available_models"][0]
-    return templates.TemplateResponse(request, "index.html", {"request": request})
+            context["selected_model_name"] = context["available_models"][0]
+
+    return templates.TemplateResponse(
+        request,
+        "index.html",
+        context
+    )
 
 @app.post("/", response_class=HTMLResponse)
 async def predict_price(
@@ -114,10 +117,10 @@ async def predict_price(
         "available_models": [],
         "error": None
     }
+
     try:
         with open(os.path.join(MODEL_DIR, "meta.json"), "r") as f:
             meta = json.load(f)
-        
         context["chipset_list"] = meta.get("chipset_list", [])
         context["resolution_list"] = meta.get("resolution_list", [])
         context["available_models"] = meta.get("available_trained_models", ["RandomForest", "SVM", "XGBoost"])
@@ -125,40 +128,36 @@ async def predict_price(
 
         model_filename = f"{selected_model_name}.pkl"
         model_path = os.path.join(MODEL_DIR, model_filename)
-
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"File model '{model_filename}' tidak ditemukan di '{MODEL_DIR}'.")
-        
-        loaded_model = joblib.load(model_path)
 
+        loaded_model = joblib.load(model_path)
         chipset_val = chipset_score(chipset)
         resolution_val = resolution_to_value(display_resolution)
         X_input = np.array([[ram, storage, resolution_val, chipset_val]])
-
         prediction_idx = loaded_model.predict(X_input)[0]
         label_mapping = meta.get("label_mapping", {})
         context["prediction"] = label_mapping.get(str(prediction_idx), "Unknown")
-        
+
         overall_best_f1_score = meta.get("best_model_overall_f1_score", 0)
         context["accuracy_overall_best_model"] = round(overall_best_f1_score * 100, 2)
-        
         model_f1_scores_dict = meta.get("model_f1_scores", {})
         selected_model_f1 = model_f1_scores_dict.get(selected_model_name, 0)
         context["accuracy_selected_model"] = round(selected_model_f1 * 100, 2)
 
     except Exception as e:
         context["error"] = str(e)
-        if not context["chipset_list"] and not context["resolution_list"]:
-            try:
-                with open(os.path.join(MODEL_DIR, "meta.json"), "r") as f_err:
-                    meta_err = json.load(f_err)
-                context["chipset_list"] = meta_err.get("chipset_list", [])
-                context["resolution_list"] = meta_err.get("resolution_list", [])
-                context["available_models"] = meta_err.get("available_trained_models", ["RandomForest", "SVM", "XGBoost"])
-                context["best_model_overall_name"] = meta_err.get("best_model_name")
-            except Exception: 
-                context["available_models"] = ["RandomForest", "SVM", "XGBoost"]
-    return templates.TemplateResponse("index.html", context)
+        try:
+            with open(os.path.join(MODEL_DIR, "meta.json"), "r") as f_err:
+                meta_err = json.load(f_err)
+            context["chipset_list"] = meta_err.get("chipset_list", [])
+            context["resolution_list"] = meta_err.get("resolution_list", [])
+            context["available_models"] = meta_err.get("available_trained_models", ["RandomForest", "SVM", "XGBoost"])
+            context["best_model_overall_name"] = meta_err.get("best_model_name")
+        except Exception:
+            context["available_models"] = ["RandomForest", "SVM", "XGBoost"]
+
+    return templates.TemplateResponse(request, "index.html", context)
 
 
 def preprocess_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
