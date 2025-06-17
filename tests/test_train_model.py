@@ -56,6 +56,13 @@ def test_preprocess_data(sample_dataframe):
 @mock.patch("src.train_model.mlflow.log_param")
 @mock.patch("src.train_model.mlflow.log_metric")
 def test_train_function(mock_metric, mock_param, mock_experiment, mock_start_run, mock_read_csv):
+    import mlflow
+    import os
+
+    # Set temp tracking URI
+    os.makedirs("/tmp/mlruns-test", exist_ok=True)
+    mlflow.set_tracking_uri("file:/tmp/mlruns-test")
+
     # Prepare synthetic balanced dataset
     df = pd.DataFrame({
         'ram': [4, 6, 8, 12, 4, 6, 8, 12, 4, 6, 8, 12],
