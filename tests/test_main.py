@@ -92,7 +92,7 @@ def test_get_index_success(mock_open_file):
     assert response.status_code == 200
     assert "Snapdragon 855" in response.text
 
-@@patch("app.main.open", side_effect=FileNotFoundError("meta.json not found"))
+@patch("app.main.open", side_effect=FileNotFoundError("meta.json not found"))
 def test_get_index_file_not_found(mock_open):
     response = client.get("/")
     
