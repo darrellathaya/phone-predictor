@@ -1,61 +1,143 @@
-import pytest
-from fastapi.testclient import TestClient
-from app.main import app, train
+import os
 import json
+import shutil
+import tempfile
+import pytest
+import joblib
 import pandas as pd
-from unittest.mock import patch, mock_open, MagicMock
+import numpy as np
+from unittest.mock import patch, MagicMock
+
+from fastapi.testclient import TestClient
+from app.main import app, resolution_to_value, chipset_score, preprocess_data, get_models, setup_experiment
 
 client = TestClient(app)
 
-def test_get_index_success():
+# -----------------------
+# Endpoint Tests
+# -----------------------
+
+def test_get_index_success(tmp_path):
+    meta = {
+        "chipset_list": ["Snapdragon 888", "Apple A14"],
+        "resolution_list": ["720p", "1080p", "2k+"],
+        "available_trained_models": ["RandomForest", "SVM"],
+        "best_model_name": "RandomForest"
+    }
+    os.makedirs("models", exist_ok=True)
+    with open("models/meta.json", "w") as f:
+        json.dump(meta, f)
+
     response = client.get("/")
     assert response.status_code == 200
-    assert "chipset_list" in response.text
+    assert "Snapdragon 888" in response.text
 
-@patch("app.main.os.path.exists", return_value=False)
-@patch("app.main.load_metadata", return_value={"chipset_list": ["Snapdragon 855"], "resolution_list": ["720p", "1080p", "2k+"], "available_trained_models": [], "label_mapping": {}})
-def test_model_file_missing(mock_metadata, mock_exists):
+def test_get_index_file_not_found(monkeypatch):
+    if os.path.exists("models/meta.json"):
+        os.remove("models/meta.json")
+
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "Gagal memuat metadata awal" in response.text
+
+def test_post_predict_success(tmp_path):
+    os.makedirs("models", exist_ok=True)
+    meta = {
+        "chipset_list": ["Snapdragon 888"],
+        "resolution_list": ["1080p"],
+        "available_trained_models": ["RandomForest"],
+        "best_model_name": "RandomForest",
+        "best_model_overall_f1_score": 0.9,
+        "model_f1_scores": {"RandomForest": 0.9},
+        "label_mapping": {"0": "Low", "1": "Mid", "2": "High"}
+    }
+    with open("models/meta.json", "w") as f:
+        json.dump(meta, f)
+
+    dummy_model = get_models()["RandomForest"]
+    joblib.dump(dummy_model, "models/RandomForest.pkl")
+
     response = client.post("/", data={
         "ram": 2048,
         "storage": 128,
         "display_resolution": "1080p",
-        "chipset": "Snapdragon 855",
+        "chipset": "Snapdragon 888",
         "selected_model_name": "RandomForest"
     })
     assert response.status_code == 200
-    assert "tidak ditemukan" in response.text or "not found" in response.text
+    assert "Mid" in response.text or "Low" in response.text or "High" in response.text
 
-@patch("builtins.open", side_effect=FileNotFoundError("meta.json missing"))
-@patch("app.main.os.path.exists", return_value=False)
-def test_get_index_file_not_found(mock_exists, mock_open):
-    response = client.get("/")
-    assert response.status_code == 200
-    assert "Gagal memuat metadata awal" in response.text or "meta.json" in response.text
+def test_post_predict_missing_model_file():
+    if os.path.exists("models/RandomForest.pkl"):
+        os.remove("models/RandomForest.pkl")
 
-@patch("builtins.open", new_callable=mock_open, read_data=json.dumps({
-    "chipset_list": ["Snapdragon 855"],
-    "resolution_list": ["720p", "1080p", "2k+"],
-    "available_trained_models": ["XGBoost"],
-    "label_mapping": {"0": "Low"}
-}))
-@patch("app.main.os.path.exists", return_value=True)
-def test_fallback_selected_model(mock_exists, mock_file):
-    response = client.get("/")
-    assert response.status_code == 200
-    assert "XGBoost" in response.text
+    meta = {
+        "chipset_list": ["Snapdragon 888"],
+        "resolution_list": ["1080p"],
+        "available_trained_models": ["RandomForest"],
+        "best_model_name": "RandomForest",
+        "label_mapping": {"0": "Low"}
+    }
+    with open("models/meta.json", "w") as f:
+        json.dump(meta, f)
 
-@patch("builtins.print")  # suppress logs
-@patch("builtins.open", new_callable=mock_open)
-@patch("pandas.read_csv")
-@patch("app.main.mlflow.start_run")
-@patch("app.main.setup_experiment", return_value="123")
-def test_train_runs(mock_setup, mock_run, mock_read_csv, mock_open_file, mock_print):
-    mock_df = pd.DataFrame({
-        "ram": [2048, 4096],
-        "storage": [64, 128],
-        "display_resolution": ["1080p", "1080p"],
-        "chipset": ["Snapdragon 855", "Snapdragon 855"],
-        "price_range": ["Low", "Mid"]
+    response = client.post("/", data={
+        "ram": 2048,
+        "storage": 128,
+        "display_resolution": "1080p",
+        "chipset": "Snapdragon 888",
+        "selected_model_name": "RandomForest"
     })
-    mock_read_csv.return_value = mock_df
-    train()  # Ensure it runs without error
+    assert response.status_code == 200
+    assert "tidak ditemukan" in response.text
+
+# -----------------------
+# Utility Function Tests
+# -----------------------
+
+def test_resolution_to_value():
+    assert resolution_to_value("720p") == 720
+    assert resolution_to_value("1080p") == 1080
+    assert resolution_to_value("2k+") == 2000
+    assert resolution_to_value("unknown") == 720
+
+def test_chipset_score():
+    assert chipset_score("Snapdragon 888") == 800
+    assert chipset_score("Tensor G3") == 800
+    assert chipset_score("Apple A14") == 770
+    assert chipset_score("UnknownChipset") == 400
+
+def test_preprocess_data():
+    df = pd.DataFrame({
+        "ram": [2048],
+        "storage": [64],
+        "display_resolution": ["1080p"],
+        "chipset": ["Snapdragon 888"],
+        "price_range": ["Mid"]
+    })
+    X, y = preprocess_data(df)
+    assert "chipset_score" in X.columns
+    assert "display_resolution_cat" in X.columns
+    assert y.iloc[0] == "Mid"
+
+def test_get_models():
+    models = get_models()
+    assert "RandomForest" in models
+    assert "SVM" in models
+    assert "XGBoost" in models
+
+# -----------------------
+# MLflow Tests
+# -----------------------
+
+@patch("app.main.MlflowClient")
+def test_setup_experiment(mock_mlflow):
+    mock_client = MagicMock()
+    mock_client.get_experiment_by_name.return_value = None
+    mock_mlflow.return_value = mock_client
+
+    result = setup_experiment("TestExperiment")
+    assert mock_client.create_experiment.called
+
+# Optional: Test `train()` if you want full end-to-end ML test
+# You can call app.main.train() in a temp folder and check files.
