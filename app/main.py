@@ -87,7 +87,7 @@ async def read_index(request: Request):
         context["available_models"] = ["RandomForest", "SVM", "XGBoost"]
         if context["available_models"]:
              context["selected_model_name"] = context["available_models"][0]
-    return templates.TemplateResponse("index.html", context)
+    return templates.TemplateResponse(request, "index.html", {"request": request})
 
 @app.post("/", response_class=HTMLResponse)
 async def predict_price(

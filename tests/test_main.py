@@ -6,6 +6,7 @@ import pytest
 import joblib
 import pandas as pd
 import numpy as np
+from bs4 import BeautifulSoup
 from unittest.mock import patch, MagicMock
 
 from fastapi.testclient import TestClient
@@ -65,7 +66,12 @@ def test_post_predict_success(tmp_path):
         "selected_model_name": "RandomForest"
     })
     assert response.status_code == 200
-    assert "Mid" in response.text or "Low" in response.text or "High" in response.text
+
+    soup = BeautifulSoup(response.text, "html.parser")
+    prediction = soup.find("h5", class_="card-title")
+    assert prediction is not None
+    assert any(label in prediction.text for label in ["Low", "Mid", "High"])
+
 
 def test_post_predict_missing_model_file():
     if os.path.exists("models/RandomForest.pkl"):
