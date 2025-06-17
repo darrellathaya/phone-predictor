@@ -10,3 +10,4 @@ python-multipart
 mlflow
 httpx
 imbalanced-learn
+beautifulsoup4
