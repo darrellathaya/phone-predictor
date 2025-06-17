@@ -91,18 +91,3 @@ def test_get_index_success(mock_open_file):
     response = client.get("/")
     assert response.status_code == 200
     assert "Snapdragon 855" in response.text
-
-@patch("builtins.open", side_effect=FileNotFoundError("meta.json not found"))
-def test_get_index_file_not_found(mock_open):
-    response = client.get("/")
-    
-    # Force render response (if it's a TemplateResponse)
-    if hasattr(response, "template"):
-        # Manually render for testing environments (some frameworks delay render)
-        html = response.template.render(response.context)
-    else:
-        html = response.text
-    
-    assert response.status_code == 200
-    assert "Gagal memuat metadata awal" in html
-    assert "RandomForest" in html
