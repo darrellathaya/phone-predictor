@@ -8,7 +8,7 @@ from unittest.mock import patch, mock_open, MagicMock
 
 from app.main import (
     app, resolution_to_value, chipset_score, preprocess_data,
-    get_models, setup_experiment
+    get_models, setup_experiment, train
 )
 
 client = TestClient(app)
@@ -45,13 +45,22 @@ def test_get_models():
     assert "XGBoost" in models
 
 @patch("app.main.MlflowClient")
-def test_setup_experiment(mock_client_class):
+def test_setup_experiment_create(mock_client_class):
     mock_client = MagicMock()
     mock_client_class.return_value = mock_client
     mock_client.get_experiment_by_name.return_value = None
     mock_client.create_experiment.return_value = "123"
     result = setup_experiment("test")
     assert result == "123"
+
+@patch("app.main.MlflowClient")
+def test_setup_experiment_delete(mock_client_class):
+    mock_client = MagicMock()
+    mock_experiment = MagicMock(experiment_id="exp123")
+    mock_client.get_experiment_by_name.return_value = mock_experiment
+    mock_client_class.return_value = mock_client
+    setup_experiment("test")
+    mock_client.delete_experiment.assert_called_once_with("exp123")
 
 # === FastAPI Integration Tests ===
 
@@ -81,6 +90,18 @@ def test_post_predict(mock_joblib_load, mock_exists, mock_file):
     assert response.status_code == 200
     assert "Low" in response.text
 
+@patch("app.main.os.path.exists", return_value=False)
+def test_model_file_missing(mock_exists):
+    response = client.post("/", data={
+        "ram": 2048,
+        "storage": 128,
+        "display_resolution": "1080p",
+        "chipset": "Snapdragon 855",
+        "selected_model_name": "RandomForest"
+    })
+    assert response.status_code == 200
+    assert "tidak ditemukan" in response.text
+
 @patch("builtins.open", new_callable=mock_open, read_data=json.dumps({
     "chipset_list": ["Snapdragon 855"],
     "resolution_list": ["720p"],
@@ -91,3 +112,38 @@ def test_get_index_success(mock_open_file):
     response = client.get("/")
     assert response.status_code == 200
     assert "Snapdragon 855" in response.text
+
+@patch("builtins.open", side_effect=[FileNotFoundError("meta.json missing"), FileNotFoundError("fallback meta.json missing")])
+def test_get_index_file_not_found(mock_open):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "Gagal memuat metadata awal" in response.text
+    assert "RandomForest" in response.text
+
+@patch("builtins.open", new_callable=mock_open, read_data=json.dumps({
+    "available_trained_models": ["XGBoost"]
+}))
+@patch("app.main.os.path.exists", return_value=True)
+def test_fallback_selected_model(mock_exists, mock_file):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "XGBoost" in response.text
+
+# === Model Training (Edge) ===
+
+@patch("builtins.print")  # To suppress print logs
+@patch("builtins.open", new_callable=mock_open)
+@patch("pandas.read_csv")
+@patch("app.main.mlflow.start_run")
+def test_train_runs(mock_run, mock_read_csv, mock_open_file, mock_print):
+    mock_df = pd.DataFrame({
+        "ram": [2048, 4096],
+        "storage": [64, 128],
+        "display_resolution": ["1080p", "1080p"],
+        "chipset": ["Snapdragon 855", "Snapdragon 855"],
+        "price_range": ["Low", "Mid"]
+    })
+    mock_read_csv.return_value = mock_df
+
+    train()  # Run training
+    assert mock_read_csv.called
