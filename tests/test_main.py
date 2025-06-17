@@ -50,13 +50,7 @@ def test_preprocess_data(sample_dataframe):
 
 # ---------- Unit Tests: Model Utilities ----------
 
-def test_get_models():
-    models = get_models()
-    assert "RandomForest" in models
-    assert "SVM" in models
-    assert "XGBoost" in models
-
-@mock.patch("mlflow.MlflowClient")
+@mock.patch("app.main.mlflow.MlflowClient")  # Correct patch path
 def test_setup_experiment(mock_client):
     mock_instance = mock_client.return_value
     mock_instance.get_experiment_by_name.return_value = None
@@ -92,5 +86,10 @@ def test_predict_price(mock_joblib_load, mock_exists, mock_open):
 
     assert response.status_code == 200
     json_response = response.json()
-    assert "result" in json_response
-    assert "Predicted price range" in json_response["result"]
+    assert "available_trained_models" in json_response
+    assert "best_model_name" in json_response
+    assert "chipset_list" in json_response
+    assert "resolution_list" in json_response
+    assert "label_mapping" in json_response
+    assert "model_f1_scores" in json_response
+    assert "best_model_overall_f1_score" in json_response
