@@ -43,3 +43,4 @@ def test_preprocess_data():
     assert y.tolist() == ["Low", "High"]
     assert "display_resolution_cat" in X.columns
     assert "chipset_score" in X.columns
+    
