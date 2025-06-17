@@ -62,7 +62,7 @@ def test_post_predict_success(tmp_path):
     from sklearn.ensemble import RandomForestClassifier
     # Train the dummy model with 4 features to match the server's preprocessing
     dummy_model = RandomForestClassifier()
-    dummy_model.fit([[1]][[2]][[3]][[4]], [1])  # Adjusted line: Train with 4 features
+    dummy_model.fit([[1]][[2]][[3]][[4]], [1])  # Corrected line: Train with 4 features
 
     joblib.dump(dummy_model, "models/RandomForest.pkl")
 
