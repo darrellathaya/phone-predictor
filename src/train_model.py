@@ -83,16 +83,18 @@ def clean_and_setup_mlflow_experiment(experiment_name: str, mlruns_path: Path):
     mlflow.set_tracking_uri(f"file:{str(mlruns_path)}")
     client = MlflowClient()
 
-    # If experiment exists, delete it properly
-    existing = client.get_experiment_by_name(experiment_name)
-    if existing:
-        print(f"Deleting old experiment '{experiment_name}' (ID: {existing.experiment_id})")
-        client.delete_experiment(existing.experiment_id)
-
-    # Re-create the experiment cleanly
-    experiment_id = client.create_experiment(name=experiment_name)
-    mlflow.set_experiment(experiment_name)
-    print(f"Created and set experiment '{experiment_name}' with ID: {experiment_id}")
+    experiment = client.get_experiment_by_name(experiment_name)
+    if experiment:
+        if experiment.lifecycle_stage == "deleted":
+            print(f"Restoring deleted experiment '{experiment_name}' (ID: {experiment.experiment_id})")
+            client.restore_experiment(experiment.experiment_id)
+        else:
+            print(f"Using existing experiment '{experiment_name}' (ID: {experiment.experiment_id})")
+        mlflow.set_experiment(experiment_name)
+    else:
+        experiment_id = client.create_experiment(name=experiment_name)
+        mlflow.set_experiment(experiment_name)
+        print(f"Created experiment '{experiment_name}' (ID: {experiment_id})")
 
 
 def train_and_evaluate(models, X_train, X_test, y_train, y_test):
