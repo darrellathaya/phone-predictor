@@ -2,10 +2,10 @@ name: CI-CD Pipeline
 
 on:
   push:
-    # branches:
-    #   - main
-    paths:
-        - "data/**"
+    branches:
+      - main
+    # paths:
+    #     - "data/**"
 
 jobs:
 # First Job: Pre-Build
