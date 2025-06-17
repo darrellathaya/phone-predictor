@@ -86,7 +86,7 @@ def clean_and_setup_mlflow_experiment(experiment_name: str, mlruns_path: Path):
     experiment = client.get_experiment_by_name(experiment_name)
     if experiment:
         if experiment.lifecycle_stage == "deleted":
-            print(f"Restoring deleted experiment '{experiment_name}' (ID: {experiment.experiment_id})")
+            printa(f"Restoring deleted experiment '{experiment_name}' (ID: {experiment.experiment_id})")
             client.restore_experiment(experiment.experiment_id)
         else:
             print(f"Using existing experiment '{experiment_name}' (ID: {experiment.experiment_id})")

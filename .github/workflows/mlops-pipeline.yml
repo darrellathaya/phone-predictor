@@ -145,10 +145,11 @@ jobs:
           name: models
           path: models/
 
-      - name: Commit and push model files
-        env:
-          GH_TOKEN: ${{ secrets.RAILWAY_SECRET }}
+      - name: Commit updated model files
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update trained models"
           file_pattern: "models/**"
+          commit_user_name: github-actions[bot]
+          commit_user_email: github-actions[bot]@users.noreply.github.com
+
