@@ -12,11 +12,13 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from imblearn.over_sampling import SMOTE
 import mlflow
+from mlflow import MlflowClient # Import MlflowClient
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE_DIR, "..", "data", "raw", "train.csv")
 MODEL_DIR = os.path.join(BASE_DIR, "..", "models")
 os.makedirs(MODEL_DIR, exist_ok=True)
+EXPERIMENT_NAME = "PhonePricePrediction" # Definisikan nama eksperimen
 
 def resolution_to_value(res_str: str) -> int:
     return {"720p": 720, "1080p": 1080, "2k+": 2000}.get(res_str, 720)
@@ -73,9 +75,37 @@ def get_models():
         "XGBoost": make_pipeline_func(XGBClassifier(eval_metric="mlogloss", random_state=42, use_label_encoder=False))
     }
 
-def train_and_evaluate(models, X_train, X_test, y_train, y_test):
+def setup_mlflow_experiment(experiment_name: str):
     mlflow.set_tracking_uri("file:./mlruns")
-    mlflow.set_experiment("PhonePricePrediction")
+    client = MlflowClient()
+    experiment = client.get_experiment_by_name(experiment_name)
+    if experiment:
+        print(f"Deleting old experiment '{experiment_name}' with ID: {experiment.experiment_id} to ensure clean artifact paths.")
+        try:
+            client.delete_experiment(experiment.experiment_id)
+        except Exception as e:
+            print(f"Could not delete old experiment {experiment.experiment_id}: {e}")
+            # Jika penghapusan gagal, coba buat dengan nama unik atau lanjutkan dan lihat apakah MLflow bisa menanganinya
+            # Untuk CI, idealnya selalu mulai bersih.
+
+    # Buat eksperimen baru. Artifact location akan default ke relatif terhadap tracking URI.
+    try:
+        experiment_id = client.create_experiment(name=experiment_name)
+        mlflow.set_experiment(experiment_name)
+        print(f"Created and set experiment '{experiment_name}' with ID: {experiment_id}")
+    except Exception as e:
+        print(f"Failed to create or set experiment {experiment_name}: {e}. Trying to set it if it exists due to race condition or partial deletion.")
+        # Coba set eksperimen jika pembuatan gagal (misalnya karena sudah ada setelah delete gagal)
+        try:
+            mlflow.set_experiment(experiment_name)
+            print(f"Successfully set experiment '{experiment_name}' after initial create failure.")
+        except Exception as e_set:
+            print(f"Critical error: Failed to set experiment '{experiment_name}' even after attempting to create/delete: {e_set}")
+            raise # Re-raise jika setup eksperimen gagal total
+
+def train_and_evaluate(models, X_train, X_test, y_train, y_test):
+    setup_mlflow_experiment(EXPERIMENT_NAME) # Panggil fungsi setup eksperimen
+
     best_overall_score = 0
     best_model_obj = None
     best_model_overall_name = ""

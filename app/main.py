@@ -221,12 +221,12 @@ def get_models() -> Dict[str, object]:
         )
     }
 
-def setup_experiment(experiment_name: str) -> str:
+def setup_experiment(experiment_name: str) -> str: # Fungsi ini ada di main.py
     mlflow.set_tracking_uri("file:./mlruns")
     client = MlflowClient()
     experiment = client.get_experiment_by_name(experiment_name)
     if experiment:
-        print(f"Deleting old experiment: {experiment.experiment_id}")
+        print(f"Deleting old experiment '{experiment_name}' with ID: {experiment.experiment_id} in main.py's train function.")
         client.delete_experiment(experiment.experiment_id)
 
     experiment_id_str = client.create_experiment(
@@ -235,7 +235,7 @@ def setup_experiment(experiment_name: str) -> str:
     mlflow.set_experiment(experiment_name)
     return experiment_id_str
 
-def train():
+def train(): # Fungsi train di main.py
     print("Loading data...")
     df = pd.read_csv(DATA_PATH)
 
@@ -265,12 +265,14 @@ def train():
     best_name = ""
     model_f1_scores_for_meta = {}
 
-    print("Starting MLflow experiment...")
-    experiment_id = setup_experiment(EXPERIMENT_NAME)
+    print("Starting MLflow experiment (from main.py)...")
+    experiment_id_str = setup_experiment(EXPERIMENT_NAME) # Menggunakan setup_experiment yang ada di main.py
 
     for name, model_instance in models.items():
-        print(f"Training {name}...")
-        with mlflow.start_run(experiment_id=experiment_id, run_name=name):
+        print(f"Training {name} (from main.py)...")
+        # Jika experiment_id_str diperlukan untuk mlflow.start_run, pastikan setup_experiment mengembalikannya
+        # dan mlflow.start_run menggunakannya, atau cukup dengan run_name di bawah eksperimen yang sudah di-set.
+        with mlflow.start_run(run_name=name): # Seharusnya berjalan di bawah eksperimen yang sudah di-set
             model_instance.fit(X_train, y_train)
             preds = model_instance.predict(X_test)
             acc = accuracy_score(y_test, preds)
@@ -283,13 +285,14 @@ def train():
             mlflow.log_metric("f1_score_weighted", f1)
             
             joblib.dump(model_instance, os.path.join(MODEL_DIR, f"{name}.pkl"))
+            # mlflow.sklearn.log_model(model_instance, name) # Jika ingin log model dari train() di main.py juga
 
             if f1 > best_score:
                 best_score = f1
                 best_model_obj = model_instance
                 best_name = name
 
-    print(f"Best model: {best_name} (F1-score weighted: {best_score:.4f})")
+    print(f"Best model: {best_name} (F1-score weighted: {best_score:.4f}) (from main.py)")
     joblib.dump(best_model_obj, os.path.join(MODEL_DIR, "price_range_model.pkl"))
     
     accuracy_txt_path = os.path.join(MODEL_DIR, "accuracy.txt")
@@ -310,7 +313,7 @@ def train():
     with open(os.path.join(MODEL_DIR, "meta.json"), "w") as f:
         json.dump(meta_content, f, indent=4)
 
-    print("Training complete!")
+    print("Training complete (from main.py)!")
 
 # if __name__ == "__main__":
 # train()
