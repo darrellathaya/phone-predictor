@@ -4,7 +4,13 @@ import joblib
 import pytest
 import pandas as pd
 from unittest import mock
-from src.train_model import resolution_to_value, chipset_score, preprocess_data, train, MODEL_DIR
+from src.train_model import (
+    resolution_to_value,
+    chipset_score,
+    preprocess_data,
+    train,
+    MODEL_DIR
+)
 
 
 # === Fixtures & Setup ===
@@ -19,7 +25,7 @@ def sample_dataframe():
     })
 
 
-# === Unit Tests for Helpers ===
+# === Unit Tests for Helper Functions ===
 def test_resolution_to_value():
     assert resolution_to_value("720p") == 720
     assert resolution_to_value("1080p") == 1080
@@ -43,20 +49,20 @@ def test_preprocess_data(sample_dataframe):
     assert isinstance(y, pd.Series)
 
 
-# === Integration Test ===
+# === Integration Test for Training Pipeline ===
 @mock.patch("src.train_model.pd.read_csv")
 @mock.patch("src.train_model.mlflow.start_run")
 @mock.patch("src.train_model.mlflow.set_experiment")
 @mock.patch("src.train_model.mlflow.log_param")
 @mock.patch("src.train_model.mlflow.log_metric")
-def test_train_function(mock_metric, mock_param, mock_experiment, mock_start_run, mock_read_csv, tmp_path):
-    # Prepare fake data
+def test_train_function(mock_metric, mock_param, mock_experiment, mock_start_run, mock_read_csv):
+    # Prepare synthetic balanced dataset
     df = pd.DataFrame({
         'ram': [4, 6, 8, 12, 4, 6, 8, 12, 4, 6, 8, 12],
-        'storage': [64, 128, 256, 512, 64, 128, 256, 512, 64, 128, 256, 512],
+        'storage': [64, 128, 256, 512] * 3,
         'display_resolution': ['720p'] * 12,
         'chipset': ['snapdragon 888', 'apple a16', 'unknown', 'kirin'] * 3,
-        'price_range': ['low', 'medium', 'high'] * 4  # Exactly 4 of each class
+        'price_range': ['low', 'medium', 'high'] * 4
     })
     mock_read_csv.return_value = df
 
@@ -77,20 +83,20 @@ def test_train_function(mock_metric, mock_param, mock_experiment, mock_start_run
     assert isinstance(meta["chipset_list"], list)
 
 
-# === Negative Test for SMOTE ===
+# === Negative Test for SMOTE Exception Handling ===
 @mock.patch("src.train_model.SMOTE")
 @mock.patch("src.train_model.pd.read_csv")
 def test_smote_failure(mock_read_csv, mock_smote, capsys):
     df = pd.DataFrame({
-        'ram': [4, 6, 8, 12, 4, 6, 8, 12, 4, 6, 8, 12],
-        'storage': [64, 128, 256, 512, 64, 128, 256, 512, 64, 128, 256, 512],
+        'ram': [4] * 12,
+        'storage': [64] * 12,
         'display_resolution': ['720p'] * 12,
-        'chipset': ['snapdragon 888', 'apple a16', 'unknown', 'kirin'] * 3,
-        'price_range': ['low', 'medium', 'high'] * 4  # Exactly 4 of each class
+        'chipset': ['snapdragon 888'] * 12,
+        'price_range': ['low'] * 12
     })
     mock_read_csv.return_value = df
     mock_smote.side_effect = ValueError("Need at least 2 classes")
- 
+
     train()
 
     captured = capsys.readouterr()
