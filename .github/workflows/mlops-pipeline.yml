@@ -3,9 +3,7 @@ name: CI-CD Pipeline
 on:
   push:
     branches:
-      - main
-    # paths:
-    #     - "data/**"
+      - Testing
 
 jobs:
 # First Job: Pre-Build
@@ -25,18 +23,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Ensure mlruns dir exists
-        run: mkdir -p mlruns
-
-      - name: Train model and log to MLflow
-        run: python src/train_model.py
+      - name: Train model
+        run: |
+          python src/train_model.py
 
       - name: Upload mlruns as artifact
         uses: actions/upload-artifact@v4
         with:
           name: mlruns
           path: mlruns/
-      
+
       - name: Upload model files as artifact
         uses: actions/upload-artifact@v4
         with:
@@ -130,7 +126,6 @@ jobs:
             -Dsonar.python.version=3.10
             -Dsonar.python.coverage.reportPaths=coverage.xml
 
-
 # Fourth Job: Build and Deploy
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -145,11 +140,10 @@ jobs:
           name: models
           path: models/
 
-      - name: Commit updated model files
+      - name: Commit and push model files
+        env:
+          GH_TOKEN: ${{ secrets.RAILWAY_SECRET }}
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update trained models"
           file_pattern: "models/**"
-          repository: https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}
-          commit_user_name: github-actions[bot]
-          commit_user_email: github-actions[bot]@users.noreply.github.com
