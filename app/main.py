@@ -26,7 +26,6 @@ from fastapi.templating import Jinja2Templates
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="templates/static"), name="static")
-templates = Jinja2Templates(directory="templates")
 templates = Jinja2Templates(
     directory="templates",
     env=jinja2.Environment(
