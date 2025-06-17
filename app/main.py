@@ -11,7 +11,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import make_pipeline # Diperlukan untuk get_models dan train
 from imblearn.over_sampling import SMOTE
 
 import mlflow
@@ -24,93 +24,16 @@ from fastapi.templating import Jinja2Templates
 
 app = FastAPI()
 
-# Mount static file dari templates/static
 app.mount("/static", StaticFiles(directory="templates/static"), name="static")
-
-# Setup templates directory
 templates = Jinja2Templates(directory="templates")
 
-# Endpoint default untuk menampilkan index.html (GET)
-@app.get("/", response_class=HTMLResponse)
-async def read_index(request: Request):
-    try:
-        with open(os.path.join("models", "meta.json"), "r") as f:
-            meta = json.load(f)
-        chipset_list = meta.get("chipset_list", [])
-        resolution_list = meta.get("resolution_list", [])
-    except Exception:
-        chipset_list = []
-        resolution_list = []
-
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "chipset_list": chipset_list,
-        "resolution_list": resolution_list,
-        "selected_chipset": None,
-        "selected_resolution": None,
-        "prediction": None,
-        "accuracy": None,
-        "ram": None,
-        "storage": None,
-        "error": None
-    })
-
-# Endpoint POST untuk prediksi
-@app.post("/", response_class=HTMLResponse)
-async def predict_price(
-    request: Request,
-    ram: int = Form(...),
-    storage: int = Form(...),
-    display_resolution: str = Form(...),
-    chipset: str = Form(...)
-):
-    try:
-        model = joblib.load(os.path.join("models", "price_range_model.pkl"))
-        with open(os.path.join("models", "meta.json"), "r") as f:
-            meta = json.load(f)
-
-        chipset_val = chipset_score(chipset)
-        resolution_val = resolution_to_value(display_resolution)
-        X_input = np.array([[ram, storage, resolution_val, chipset_val]])
-
-        prediction_idx = model.predict(X_input)[0]
-        label_mapping = meta.get("label_mapping", {})
-        prediction = label_mapping.get(str(prediction_idx), "Unknown")
-
-        return templates.TemplateResponse("index.html", {
-            "request": request,
-            "chipset_list": meta.get("chipset_list", []),
-            "resolution_list": meta.get("resolution_list", []),
-            "selected_chipset": chipset,
-            "selected_resolution": display_resolution,
-            "prediction": prediction,
-            "accuracy": round(meta.get("best_model_metric_score", 0) * 100, 2),
-            "ram": ram,
-            "storage": storage,
-            "error": None
-        })
-
-    except Exception as e:
-        return templates.TemplateResponse("index.html", {
-            "request": request,
-            "chipset_list": [],
-            "resolution_list": [],
-            "selected_chipset": chipset,
-            "selected_resolution": display_resolution,
-            "prediction": None,
-            "accuracy": None,
-            "ram": ram,
-            "storage": storage,
-            "error": str(e)
-        })
-
-# === Constants ===
-DATA_PATH = os.path.join("data", "raw", "train.csv")
+# === Constants (digunakan oleh FastAPI dan fungsi train() di main.py) ===
 MODEL_DIR = "models"
-EXPERIMENT_NAME = "PhonePricePrediction"
 os.makedirs(MODEL_DIR, exist_ok=True)
+DATA_PATH = os.path.join("data", "raw", "train.csv") # Untuk fungsi train()
+EXPERIMENT_NAME = "PhonePricePrediction" # Untuk fungsi train()
 
-# === Helpers ===
+# === Helpers (digunakan oleh FastAPI dan fungsi train() di main.py) ===
 def resolution_to_value(res_str: str) -> int:
     return {"720p": 720, "1080p": 1080, "2k+": 2000}.get(res_str, 720)
 
@@ -124,17 +47,129 @@ def chipset_score(chipset: str) -> int:
         'apple a15': 800, 'apple a14': 770, 'apple a13': 740, 'apple a12': 720,
         'apple a11': 690, 'kirin': 500, 'exynos': 650
     }
-    for key in scores:
-        if key in chipset:
-            return scores[key]
+    for key_pattern, score_val in scores.items():
+        if key_pattern in chipset:
+            return score_val
     return 400
 
+# === FastAPI Endpoints ===
+@app.get("/", response_class=HTMLResponse)
+async def read_index(request: Request):
+    context = {
+        "request": request,
+        "chipset_list": [],
+        "resolution_list": [],
+        "available_models": [],
+        "selected_model_name": None,
+        "best_model_overall_name": None,
+        "selected_chipset": None,
+        "selected_resolution": None,
+        "prediction": None,
+        "accuracy_overall_best_model": None,
+        "accuracy_selected_model": None,
+        "ram": 2048,
+        "storage": 128,
+        "error": None
+    }
+    try:
+        with open(os.path.join(MODEL_DIR, "meta.json"), "r") as f:
+            meta = json.load(f)
+        context["chipset_list"] = meta.get("chipset_list", [])
+        context["resolution_list"] = meta.get("resolution_list", [])
+        context["available_models"] = meta.get("available_trained_models", [])
+        context["best_model_overall_name"] = meta.get("best_model_name")
+        
+        default_selection = meta.get("best_model_name")
+        if default_selection and default_selection in context["available_models"]:
+            context["selected_model_name"] = default_selection
+        elif context["available_models"]:
+            context["selected_model_name"] = context["available_models"][0]
+
+    except Exception as e:
+        context["error"] = f"Gagal memuat metadata awal: {str(e)}. Pastikan file 'models/meta.json' ada."
+        context["available_models"] = ["RandomForest", "SVM", "XGBoost"] # Fallback
+        if context["available_models"]:
+             context["selected_model_name"] = context["available_models"][0]
+    return templates.TemplateResponse("index.html", context)
+
+@app.post("/", response_class=HTMLResponse)
+async def predict_price(
+    request: Request,
+    ram: int = Form(...),
+    storage: int = Form(...),
+    display_resolution: str = Form(...),
+    chipset: str = Form(...),
+    selected_model_name: str = Form(...)
+):
+    context = {
+        "request": request,
+        "ram": ram,
+        "storage": storage,
+        "selected_resolution": display_resolution,
+        "selected_chipset": chipset,
+        "selected_model_name": selected_model_name,
+        "prediction": None,
+        "accuracy_overall_best_model": None,
+        "accuracy_selected_model": None,
+        "best_model_overall_name": None,
+        "chipset_list": [],
+        "resolution_list": [],
+        "available_models": [],
+        "error": None
+    }
+    try:
+        with open(os.path.join(MODEL_DIR, "meta.json"), "r") as f:
+            meta = json.load(f)
+        
+        context["chipset_list"] = meta.get("chipset_list", [])
+        context["resolution_list"] = meta.get("resolution_list", [])
+        context["available_models"] = meta.get("available_trained_models", ["RandomForest", "SVM", "XGBoost"])
+        context["best_model_overall_name"] = meta.get("best_model_name", "N/A")
+
+        model_filename = f"{selected_model_name}.pkl"
+        model_path = os.path.join(MODEL_DIR, model_filename)
+
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"File model '{model_filename}' tidak ditemukan di '{MODEL_DIR}'.")
+        
+        loaded_model = joblib.load(model_path)
+
+        chipset_val = chipset_score(chipset)
+        resolution_val = resolution_to_value(display_resolution)
+        X_input = np.array([[ram, storage, resolution_val, chipset_val]])
+
+        prediction_idx = loaded_model.predict(X_input)[0]
+        label_mapping = meta.get("label_mapping", {})
+        context["prediction"] = label_mapping.get(str(prediction_idx), "Unknown")
+        
+        overall_best_f1_score = meta.get("best_model_overall_f1_score", 0)
+        context["accuracy_overall_best_model"] = round(overall_best_f1_score * 100, 2)
+        
+        model_f1_scores_dict = meta.get("model_f1_scores", {})
+        selected_model_f1 = model_f1_scores_dict.get(selected_model_name, 0)
+        context["accuracy_selected_model"] = round(selected_model_f1 * 100, 2)
+
+    except Exception as e:
+        context["error"] = str(e)
+        if not context["chipset_list"] and not context["resolution_list"]: # Coba isi kembali untuk UI
+            try:
+                with open(os.path.join(MODEL_DIR, "meta.json"), "r") as f_err:
+                    meta_err = json.load(f_err)
+                context["chipset_list"] = meta_err.get("chipset_list", [])
+                context["resolution_list"] = meta_err.get("resolution_list", [])
+                context["available_models"] = meta_err.get("available_trained_models", ["RandomForest", "SVM", "XGBoost"])
+                context["best_model_overall_name"] = meta_err.get("best_model_name")
+            except Exception: 
+                context["available_models"] = ["RandomForest", "SVM", "XGBoost"]
+    return templates.TemplateResponse("index.html", context)
+
+
+# === Bagian Training (dikembalikan dari kode awal Anda) ===
 def preprocess_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
     df['display_resolution_cat'] = df['display_resolution'].map(resolution_to_value)
     df['chipset_score'] = df['chipset'].map(chipset_score)
     return df[['ram', 'storage', 'display_resolution_cat', 'chipset_score']], df['price_range']
 
-# === Model Factory ===
 def get_models() -> Dict[str, object]:
     return {
         "RandomForest": make_pipeline(
@@ -157,96 +192,114 @@ def get_models() -> Dict[str, object]:
         "XGBoost": make_pipeline(
             StandardScaler(),
             XGBClassifier(
-                use_label_encoder=False,
+                use_label_encoder=False, # Penting untuk XGBoost versi baru
                 eval_metric="mlogloss",
                 random_state=42
             )
         )
     }
 
-# === MLflow Setup ===
 def setup_experiment(experiment_name: str) -> str:
-    mlflow.set_tracking_uri("file:./mlruns")
+    mlflow.set_tracking_uri("file:./mlruns") # Pastikan URI relatif
     client = MlflowClient()
     experiment = client.get_experiment_by_name(experiment_name)
     if experiment:
-        print(f"Deleting old experiment: {experiment.experiment_id}")
+        print(f"Deleting old experiment: {experiment.experiment_id} (from main.py)")
         client.delete_experiment(experiment.experiment_id)
 
-    artifact_path = os.path.abspath(f"./mlruns/{experiment_name}")
-    experiment_id = client.create_experiment(
-        name=experiment_name,
-        artifact_location=f"file://{artifact_path}"
+    # Buat eksperimen tanpa artifact_location eksplisit agar default ke relatif
+    experiment_id_str = client.create_experiment(
+        name=experiment_name
     )
     mlflow.set_experiment(experiment_name)
-    return experiment_id
+    return experiment_id_str # Mengembalikan ID sebagai string
 
-# === Main Training Pipeline ===
 def train():
-    print("Loading data...")
+    print("Loading data (from main.py)...")
     df = pd.read_csv(DATA_PATH)
+    df_for_meta = df.copy() # Untuk daftar chipset di meta
 
-    print("Encoding labels...")
+    print("Encoding labels (from main.py)...")
     label_mapping = {label: idx for idx, label in enumerate(df['price_range'].unique())}
     inverse_mapping = {v: k for k, v in label_mapping.items()}
     df['price_range'] = df['price_range'].map(label_mapping)
 
-    print("Preprocessing features...")
+    print("Preprocessing features (from main.py)...")
     X, y = preprocess_data(df)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    print("Class distribution before SMOTE:")
+    print("Class distribution before SMOTE (from main.py):")
     print(y_train.value_counts(normalize=True))
 
     try:
         smote = SMOTE(random_state=42)
         X_train, y_train = smote.fit_resample(X_train, y_train)
-        print("Class distribution after SMOTE:")
+        print("Class distribution after SMOTE (from main.py):")
         print(y_train.value_counts(normalize=True))
     except ValueError as e:
-        print(f"SMOTE error: {e} - Using original data.")
+        print(f"SMOTE error: {e} - Using original data (from main.py).")
 
-    models = get_models()
-    best_score = 0
-    best_model = None
-    best_name = ""
+    models_dict = get_models() # Ganti nama variabel
+    best_overall_f1 = 0
+    best_model_obj = None # Ganti nama variabel
+    best_model_name_str = "" # Ganti nama variabel
+    all_model_f1_scores = {} # Untuk menyimpan F1 semua model
 
-    print("Starting MLflow experiment...")
-    experiment_id = setup_experiment(EXPERIMENT_NAME)
+    print("Starting MLflow experiment (from main.py)...")
+    # setup_experiment sekarang mengembalikan string ID, tapi mlflow.start_run tidak memerlukannya jika eksperimen sudah di-set
+    exp_id = setup_experiment(EXPERIMENT_NAME) # exp_id mungkin tidak digunakan langsung di start_run
 
-    for name, model in models.items():
-        print(f"Training {name}...")
-        with mlflow.start_run(experiment_id=experiment_id, run_name=name):
-            model.fit(X_train, y_train)
-            preds = model.predict(X_test)
+    for name, model_pipeline in models_dict.items(): # Ganti nama variabel
+        print(f"Training {name} (from main.py)...")
+        with mlflow.start_run(run_name=name): # Berjalan di bawah eksperimen yang sudah di-set
+            model_pipeline.fit(X_train, y_train)
+            
+            # Simpan setiap model .pkl
+            joblib.dump(model_pipeline, os.path.join(MODEL_DIR, f"{name}.pkl"))
+            
+            preds = model_pipeline.predict(X_test)
             acc = accuracy_score(y_test, preds)
             f1 = f1_score(y_test, preds, average='weighted')
+
+            all_model_f1_scores[name] = f1 # Simpan F1 skor
 
             mlflow.log_param("model_name", name)
             mlflow.log_metric("accuracy", acc)
             mlflow.log_metric("f1_score_weighted", f1)
+            # Jika Anda ingin log model ke artifact MLflow juga dari sini:
+            # mlflow.sklearn.log_model(model_pipeline, name)
 
-            if f1 > best_score:
-                best_score = f1
-                best_model = model
-                best_name = name
+            if f1 > best_overall_f1:
+                best_overall_f1 = f1
+                best_model_obj = model_pipeline
+                best_model_name_str = name
 
-    print(f"Best model: {best_name} (F1-score weighted: {best_score:.4f})")
-    joblib.dump(best_model, os.path.join(MODEL_DIR, "price_range_model.pkl"))
+    print(f"Best model: {best_model_name_str} (F1-score weighted: {best_overall_f1:.4f}) (from main.py)")
+    joblib.dump(best_model_obj, os.path.join(MODEL_DIR, "price_range_model.pkl")) # Model terbaik default
 
-    with open(os.path.join(MODEL_DIR, "accuracy.txt"), "w") as f:
-        f.write(str(best_score))
+    # Hapus accuracy.txt jika ada, karena info ada di meta.json
+    accuracy_txt_file = os.path.join(MODEL_DIR, "accuracy.txt")
+    if os.path.exists(accuracy_txt_file):
+        os.remove(accuracy_txt_file)
 
-    meta = {
-        "chipset_list": sorted(df['chipset'].dropna().unique().tolist()),
+    meta_content = {
+        "chipset_list": sorted(df_for_meta['chipset'].dropna().unique().tolist()),
         "resolution_list": ["720p", "1080p", "2k+"],
-        "best_model": best_name,
-        "best_model_metric_score": best_score,
+        "best_model_name": best_model_name_str,
+        "best_model_overall_f1_score": best_overall_f1,
+        "model_f1_scores": all_model_f1_scores,
         "metric_used": "f1_score_weighted",
-        "label_mapping": inverse_mapping
+        "label_mapping": inverse_mapping,
+        "available_trained_models": list(models_dict.keys()) # Daftar semua model yang dilatih
     }
 
     with open(os.path.join(MODEL_DIR, "meta.json"), "w") as f:
-        json.dump(meta, f, indent=4)
+        json.dump(meta_content, f, indent=4)
 
-    print("Training complete!")
+    print("Training complete (from main.py)!")
+
+# Untuk menjalankan training dari main.py (opsional):
+# if __name__ == "__main__":
+#     train()
+# atau jika Anda menjalankan dengan uvicorn dan ingin train dulu:
+# train() # Panggil sebelum app = FastAPI() jika ingin train saat startup server (tidak umum)

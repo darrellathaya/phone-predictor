@@ -1,6 +1,6 @@
 import os
 import json
-import joblib
+# import joblib
 import pytest
 import pandas as pd
 from unittest import mock
@@ -30,7 +30,7 @@ def test_resolution_to_value():
     assert resolution_to_value("720p") == 720
     assert resolution_to_value("1080p") == 1080
     assert resolution_to_value("2k+") == 2000
-    assert resolution_to_value("unknown") == 720  # default fallback
+    assert resolution_to_value("unknown") == 720
 
 
 def test_chipset_score_known():
@@ -44,7 +44,8 @@ def test_chipset_score_unknown():
 
 
 def test_preprocess_data(sample_dataframe):
-    X, y = preprocess_data(sample_dataframe)
+    df_copy = sample_dataframe.copy()
+    X, y = preprocess_data(df_copy)
     assert all(col in X.columns for col in ['ram', 'storage', 'display_resolution_cat', 'chipset_score'])
     assert isinstance(y, pd.Series)
 
@@ -55,15 +56,9 @@ def test_preprocess_data(sample_dataframe):
 @mock.patch("src.train_model.mlflow.set_experiment")
 @mock.patch("src.train_model.mlflow.log_param")
 @mock.patch("src.train_model.mlflow.log_metric")
-def test_train_function(mock_metric, mock_param, mock_experiment, mock_start_run, mock_read_csv):
-    import mlflow
-    import os
-
-    # Set temp tracking URI
-    os.makedirs("/tmp/mlruns-test", exist_ok=True)
-    mlflow.set_tracking_uri("file://" + os.path.abspath("mlruns"))
-
-    # Prepare synthetic balanced dataset
+# Tambahkan mock untuk mlflow.sklearn.log_model jika digunakan di train_model.py
+@mock.patch("src.train_model.mlflow.sklearn.log_model")
+def test_train_function(mock_log_model, mock_log_metric, mock_log_param, mock_set_experiment, mock_start_run, mock_read_csv):
     df = pd.DataFrame({
         'ram': [4, 6, 8, 12, 4, 6, 8, 12, 4, 6, 8, 12],
         'storage': [64, 128, 256, 512] * 3,
@@ -73,38 +68,51 @@ def test_train_function(mock_metric, mock_param, mock_experiment, mock_start_run
     })
     mock_read_csv.return_value = df
 
-    # Run training
     train()
 
-    # Check model file
     model_path = os.path.join(MODEL_DIR, "price_range_model.pkl")
     meta_path = os.path.join(MODEL_DIR, "meta.json")
+    
     assert os.path.exists(model_path)
     assert os.path.exists(meta_path)
 
-    # Check metadata content
     with open(meta_path) as f:
         meta = json.load(f)
-    assert "best_model" in meta
+    
+    assert "best_model_name" in meta
     assert "chipset_list" in meta
     assert isinstance(meta["chipset_list"], list)
+    assert "available_trained_models" in meta
+    assert "model_f1_scores" in meta
 
 
 # === Negative Test for SMOTE Exception Handling ===
 @mock.patch("src.train_model.SMOTE")
 @mock.patch("src.train_model.pd.read_csv")
-def test_smote_failure(mock_read_csv, mock_smote, capsys):
+# Jika train_and_evaluate atau bagian trainingnya tidak ingin dijalankan sepenuhnya setelah SMOTE error:
+# @mock.patch("src.train_model.train_and_evaluate") # Opsi untuk menghentikan lebih awal
+def test_smote_failure(mock_read_csv, mock_smote, capsys): # mock_train_evaluate opsional
+    # --- PERUBAHAN DI SINI: Pastikan data awal memiliki >1 kelas ---
     df = pd.DataFrame({
-        'ram': [4, 6, 8, 12, 4, 6, 8, 12, 4, 6, 8, 12],
-        'storage': [64, 128, 256, 512] * 3,
-        'display_resolution': ['720p'] * 12,
-        'chipset': ['snapdragon 888', 'apple a16', 'unknown', 'kirin'] * 3,
-        'price_range': ['low', 'medium', 'high'] * 4
+        'ram': [4, 6, 8, 12, 4, 6, 8, 12, 4, 6, 8, 12, 4, 6, 8, 12], # 16 sampel
+        'storage': [64, 128, 256, 512] * 4,
+        'display_resolution': ['720p'] * 16,
+        'chipset': ['snapdragon 888', 'apple a16', 'unknown', 'kirin'] * 4,
+        'price_range': (['low'] * 8) + (['medium'] * 8) # Dua kelas, masing-masing 8 sampel
     })
+    # -------------------------------------------------------------
     mock_read_csv.return_value = df
-    mock_smote.side_effect = ValueError("Need at least 2 classes")
+    
+    mock_smote_instance = mock_smote.return_value
+    # Kita buat SMOTE gagal karena alasan generik, bukan karena kekurangan kelas di input.
+    # Karena input sekarang punya >1 kelas, error "Need at least 2 classes" tidak akan terjadi di SMOTE.
+    mock_smote_instance.fit_resample.side_effect = ValueError("SMOTE failed due to a test-induced generic error.")
+
+    # Jika Anda ingin menghentikan eksekusi setelah apply_smote untuk tes ini:
+    # mock_train_evaluate.return_value = (None, "", 0, {}) # Sediakan return value dummy
 
     train()
 
     captured = capsys.readouterr()
     assert "SMOTE error" in captured.out
+    assert "Using original data" in captured.out
