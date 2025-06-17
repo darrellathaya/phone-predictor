@@ -3,6 +3,7 @@ import json
 import joblib
 import pandas as pd
 import numpy as np
+
 from typing import Tuple, Dict
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score
@@ -12,9 +13,11 @@ from xgboost import XGBClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 from imblearn.over_sampling import SMOTE
+
 import mlflow
 from mlflow import MlflowClient
-from fastapi import FastAPI, Request
+
+from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -27,16 +30,15 @@ app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 # Setup templates directory
 templates = Jinja2Templates(directory="templates")
 
-# Endpoint default untuk menampilkan index.html
+# Endpoint default untuk menampilkan index.html (GET)
 @app.get("/", response_class=HTMLResponse)
 async def read_index(request: Request):
     try:
-        # Baca metadata dari hasil training
         with open(os.path.join("models", "meta.json"), "r") as f:
             meta = json.load(f)
         chipset_list = meta.get("chipset_list", [])
         resolution_list = meta.get("resolution_list", [])
-    except Exception as e:
+    except Exception:
         chipset_list = []
         resolution_list = []
 
@@ -48,8 +50,59 @@ async def read_index(request: Request):
         "selected_resolution": None,
         "prediction": None,
         "accuracy": None,
+        "ram": None,
+        "storage": None,
         "error": None
     })
+
+# Endpoint POST untuk prediksi
+@app.post("/", response_class=HTMLResponse)
+async def predict_price(
+    request: Request,
+    ram: int = Form(...),
+    storage: int = Form(...),
+    display_resolution: str = Form(...),
+    chipset: str = Form(...)
+):
+    try:
+        model = joblib.load(os.path.join("models", "price_range_model.pkl"))
+        with open(os.path.join("models", "meta.json"), "r") as f:
+            meta = json.load(f)
+
+        chipset_val = chipset_score(chipset)
+        resolution_val = resolution_to_value(display_resolution)
+        X_input = np.array([[ram, storage, resolution_val, chipset_val]])
+
+        prediction_idx = model.predict(X_input)[0]
+        label_mapping = meta.get("label_mapping", {})
+        prediction = label_mapping.get(str(prediction_idx), "Unknown")
+
+        return templates.TemplateResponse("index.html", {
+            "request": request,
+            "chipset_list": meta.get("chipset_list", []),
+            "resolution_list": meta.get("resolution_list", []),
+            "selected_chipset": chipset,
+            "selected_resolution": display_resolution,
+            "prediction": prediction,
+            "accuracy": round(meta.get("best_model_metric_score", 0) * 100, 2),
+            "ram": ram,
+            "storage": storage,
+            "error": None
+        })
+
+    except Exception as e:
+        return templates.TemplateResponse("index.html", {
+            "request": request,
+            "chipset_list": [],
+            "resolution_list": [],
+            "selected_chipset": chipset,
+            "selected_resolution": display_resolution,
+            "prediction": None,
+            "accuracy": None,
+            "ram": ram,
+            "storage": storage,
+            "error": str(e)
+        })
 
 # === Constants ===
 DATA_PATH = os.path.join("data", "raw", "train.csv")
