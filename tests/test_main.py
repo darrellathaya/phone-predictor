@@ -92,8 +92,8 @@ def test_get_index_success(mock_open_file):
     assert response.status_code == 200
     assert "Snapdragon 855" in response.text
 
-@patch("builtins.open", side_effect=FileNotFoundError("missing meta"))
+@patch("app.main.open", side_effect=FileNotFoundError("missing meta"))
 def test_get_index_file_not_found(mock_open_file):
     response = client.get("/")
     assert response.status_code == 200
-    assert "Gagal memuat metadata awal" in response.text
+    assert "Gagal memuat metadata awal" in response.text  # if using TemplateResponse
