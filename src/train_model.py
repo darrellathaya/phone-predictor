@@ -89,6 +89,8 @@ def train_and_evaluate(models, X_train, X_test, y_train, y_test):
             f1 = f1_score(y_test, preds, average='weighted')
 
             print(f"{name} - Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
+            print("Sample predictions:", preds[:10])
+            print("True labels:", y_test[:10].values)
 
             mlflow.log_param("model_name", name)
             mlflow.log_metric("accuracy", acc)
@@ -123,18 +125,29 @@ def train():
     df = pd.read_csv(DATA_PATH)
 
     print("Encoding labels...")
-    df, inverse_mapping = encode_labels(df)
+    df_encoded, inverse_mapping = encode_labels(df)
 
     print("Preprocessing features...")
-    X, y = preprocess_data(df)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+    X, y = preprocess_data(df_encoded)
 
+    print("Splitting data...")
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+
+    print("Applying SMOTE...")
     X_train, y_train = apply_smote(X_train, y_train)
 
+    print("Training models...")
     models = get_models()
     best_model, best_name, best_score = train_and_evaluate(models, X_train, X_test, y_train, y_test)
 
     print(f"Best model: {best_name} (F1-score weighted: {best_score:.4f})")
     print("Saving model and metadata...")
     save_artifacts(best_model, best_score, best_name, inverse_mapping, df)
+
     print("Training complete!")
+
+# Entry point
+if __name__ == "__main__":
+    train()
