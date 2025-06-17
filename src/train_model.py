@@ -14,7 +14,8 @@ from imblearn.over_sampling import SMOTE
 import mlflow
 
 # === Constants ===
-DATA_PATH = os.path.join("..", "data", "raw", "train.csv")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(BASE_DIR, "..", "data", "raw", "train.csv")
 MODEL_DIR = os.path.join("..", "models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
