@@ -4,7 +4,7 @@ import joblib
 import pytest
 import pandas as pd
 from unittest import mock
-from train_model import resolution_to_value, chipset_score, preprocess_data, train, MODEL_DIR
+from src.train_model import resolution_to_value, chipset_score, preprocess_data, train, MODEL_DIR
 
 
 # === Fixtures & Setup ===
