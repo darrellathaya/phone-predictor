@@ -1,6 +1,7 @@
 import os
 import json
 import joblib
+import jinja2
 import pandas as pd
 import numpy as np
 
@@ -26,6 +27,13 @@ app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(
+    directory="templates",
+    env=jinja2.Environment(
+        loader=jinja2.FileSystemLoader("templates"),
+        auto_reload=True  # ← This is key!
+    )
+)
 
 MODEL_DIR = "models"
 os.makedirs(MODEL_DIR, exist_ok=True)

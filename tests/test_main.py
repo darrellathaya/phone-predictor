@@ -3,6 +3,7 @@ import json
 import shutil
 import tempfile
 import pytest
+import warnings
 import joblib
 import pandas as pd
 import numpy as np
@@ -12,7 +13,6 @@ from fastapi.testclient import TestClient
 from app.main import app, resolution_to_value, chipset_score, preprocess_data, get_models, setup_experiment
 
 # Silence XGBoost warning if needed
-import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="xgboost")
 
 client = TestClient(app)
