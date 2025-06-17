@@ -4,7 +4,7 @@ FROM python:3.10
 RUN useradd -m appuser
 
 # Set working directory
-WORKDIR /app
+COPY . .
 
 # Copy only requirements first (to leverage Docker caching)
 COPY requirements.txt .
