@@ -3,6 +3,7 @@ import json
 import joblib
 import pandas as pd
 import numpy as np
+import shutil # Import shutil
 
 from typing import Tuple, Dict
 from sklearn.model_selection import train_test_split
@@ -29,6 +30,7 @@ templates = Jinja2Templates(directory="templates")
 
 DATA_PATH = os.path.join("data", "raw", "train.csv")
 MODEL_DIR = "models"
+MLRUNS_DIR_MAIN = "mlruns" # Path ke direktori mlruns dari root
 EXPERIMENT_NAME = "PhonePricePrediction"
 os.makedirs(MODEL_DIR, exist_ok=True)
 
@@ -221,19 +223,27 @@ def get_models() -> Dict[str, object]:
         )
     }
 
-def setup_experiment(experiment_name: str) -> str: # Fungsi ini ada di main.py
-    mlflow.set_tracking_uri("file:./mlruns")
-    client = MlflowClient()
-    experiment = client.get_experiment_by_name(experiment_name)
-    if experiment:
-        print(f"Deleting old experiment '{experiment_name}' with ID: {experiment.experiment_id} in main.py's train function.")
-        client.delete_experiment(experiment.experiment_id)
+def setup_experiment_main(experiment_name: str, mlruns_path: str): # Diubah agar mirip dengan src/train_model.py
+    if os.path.exists(mlruns_path):
+        print(f"Deleting existing MLruns directory: {mlruns_path} (from main.py train)")
+        try:
+            shutil.rmtree(mlruns_path)
+        except OSError as e:
+            print(f"Error deleting MLruns directory {mlruns_path} in main.py: {e}")
 
-    experiment_id_str = client.create_experiment(
-        name=experiment_name
-    )
-    mlflow.set_experiment(experiment_name)
-    return experiment_id_str
+    mlflow.set_tracking_uri(f"file:{mlruns_path}")
+    client = MlflowClient()
+    try:
+        experiment_id = client.create_experiment(name=experiment_name)
+        mlflow.set_experiment(experiment_name)
+        print(f"Created and set new experiment '{experiment_name}' with ID: {experiment_id} (from main.py train)")
+    except mlflow.exceptions.MlflowException as e:
+        if "already exists" in str(e).lower():
+            print(f"Experiment '{experiment_name}' already exists (from main.py train). Setting it as active.")
+            mlflow.set_experiment(experiment_name)
+        else:
+            print(f"Critical error creating/setting experiment '{experiment_name}' in main.py: {e}")
+            raise
 
 def train(): # Fungsi train di main.py
     print("Loading data...")
@@ -266,13 +276,11 @@ def train(): # Fungsi train di main.py
     model_f1_scores_for_meta = {}
 
     print("Starting MLflow experiment (from main.py)...")
-    experiment_id_str = setup_experiment(EXPERIMENT_NAME) # Menggunakan setup_experiment yang ada di main.py
+    setup_experiment_main(EXPERIMENT_NAME, MLRUNS_DIR_MAIN)
 
     for name, model_instance in models.items():
         print(f"Training {name} (from main.py)...")
-        # Jika experiment_id_str diperlukan untuk mlflow.start_run, pastikan setup_experiment mengembalikannya
-        # dan mlflow.start_run menggunakannya, atau cukup dengan run_name di bawah eksperimen yang sudah di-set.
-        with mlflow.start_run(run_name=name): # Seharusnya berjalan di bawah eksperimen yang sudah di-set
+        with mlflow.start_run(run_name=name):
             model_instance.fit(X_train, y_train)
             preds = model_instance.predict(X_test)
             acc = accuracy_score(y_test, preds)
@@ -285,7 +293,7 @@ def train(): # Fungsi train di main.py
             mlflow.log_metric("f1_score_weighted", f1)
             
             joblib.dump(model_instance, os.path.join(MODEL_DIR, f"{name}.pkl"))
-            # mlflow.sklearn.log_model(model_instance, name) # Jika ingin log model dari train() di main.py juga
+            mlflow.sklearn.log_model(model_instance, artifact_path=name)
 
             if f1 > best_score:
                 best_score = f1
