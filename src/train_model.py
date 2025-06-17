@@ -80,28 +80,19 @@ def get_models():
     }
 
 def clean_and_setup_mlflow_experiment(experiment_name: str, mlruns_path: Path):
-    if mlruns_path.exists():
-        print(f"Deleting existing MLruns directory: {mlruns_path}")
-        try:
-            shutil.rmtree(mlruns_path)
-        except OSError as e:
-            print(f"Error deleting MLruns directory {mlruns_path}: {e}")
-    
-    mlruns_path.mkdir(parents=True, exist_ok=True)
-
     mlflow.set_tracking_uri(f"file:{str(mlruns_path)}")
-
     client = MlflowClient()
-    try:
-        experiment_id = client.create_experiment(name=experiment_name)
-        mlflow.set_experiment(experiment_name)
-        print(f"Created and set new experiment '{experiment_name}' with ID: {experiment_id}")
-    except mlflow.exceptions.MlflowException as e:
-        if "already exists" in str(e).lower():
-            print(f"Experiment '{experiment_name}' already exists. Setting it as active.")
-            mlflow.set_experiment(experiment_name)
-        else:
-            raise
+
+    # If experiment exists, delete it properly
+    existing = client.get_experiment_by_name(experiment_name)
+    if existing:
+        print(f"Deleting old experiment '{experiment_name}' (ID: {existing.experiment_id})")
+        client.delete_experiment(existing.experiment_id)
+
+    # Re-create the experiment cleanly
+    experiment_id = client.create_experiment(name=experiment_name)
+    mlflow.set_experiment(experiment_name)
+    print(f"Created and set experiment '{experiment_name}' with ID: {experiment_id}")
 
 
 def train_and_evaluate(models, X_train, X_test, y_train, y_test):
