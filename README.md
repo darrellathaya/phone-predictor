@@ -111,6 +111,15 @@ These instructions will help you set up the project locally and run it manually.
 ├── requirements.txt
 └── sonar-project.properties
 ```
+## KNOWN ISSUES AND FIXES
+MLFLOW
+![Screenshot 2025-06-17 183811](https://github.com/user-attachments/assets/2b0e9155-82a9-456d-bc71-f8e52f17e4f4)
+![Screenshot 2025-06-17 183811](https://github.com/user-attachments/assets/2b0e9155-82a9-456d-bc71-f8e52f17e4f4)
+![Screenshot 2025-06-17 183811](https://github.com/user-attachments/assets/2b0e9155-82a9-456d-bc71-f8e52f17e4f4)
+
+   ```sh
+   the issues above occured because the neccessary requirements was not installed. This issue can be fixed by adding "mlflow" to the requirements.txt
+   ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
