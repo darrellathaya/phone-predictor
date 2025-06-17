@@ -50,7 +50,7 @@ def test_preprocess_data(sample_dataframe):
 
 # ---------- Unit Tests: Model Utilities ----------
 
-@mock.patch("main.MlflowClient")  # <- Adjust to match how it's imported
+@mock.patch("app.main.MlflowClient")  # <- Adjust to match how it's imported
 def test_setup_experiment(mock_client):
     mock_instance = mock_client.return_value
     mock_instance.get_experiment_by_name.return_value = None
