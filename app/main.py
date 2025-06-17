@@ -3,23 +3,26 @@ import json
 import joblib
 import pandas as pd
 import numpy as np
-from typing import Tuple
+from typing import Tuple, Dict
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
-from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
 from imblearn.over_sampling import SMOTE
 import mlflow
 from mlflow import MlflowClient
 
+# === Constants ===
 DATA_PATH = os.path.join("data", "raw", "train.csv")
 MODEL_DIR = "models"
 EXPERIMENT_NAME = "PhonePricePrediction"
 os.makedirs(MODEL_DIR, exist_ok=True)
 
+
+# === Helpers ===
 def resolution_to_value(res_str: str) -> int:
     return {"720p": 720, "1080p": 1080, "2k+": 2000}.get(res_str, 720)
 
@@ -43,6 +46,39 @@ def preprocess_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
     df['chipset_score'] = df['chipset'].map(chipset_score)
     return df[['ram', 'storage', 'display_resolution_cat', 'chipset_score']], df['price_range']
 
+
+# === Model Factory ===
+def get_models() -> Dict[str, object]:
+    return {
+        "RandomForest": make_pipeline(
+            StandardScaler(),
+            RandomForestClassifier(
+                random_state=42,
+                class_weight='balanced',
+                min_samples_leaf=2,
+                max_features='sqrt'
+            )
+        ),
+        "SVM": make_pipeline(
+            StandardScaler(),
+            SVC(
+                probability=True,
+                class_weight='balanced',
+                random_state=42
+            )
+        ),
+        "XGBoost": make_pipeline(
+            StandardScaler(),
+            XGBClassifier(
+                use_label_encoder=False,
+                eval_metric="mlogloss",
+                random_state=42
+            )
+        )
+    }
+
+
+# === MLflow Setup ===
 def setup_experiment(experiment_name: str) -> str:
     mlflow.set_tracking_uri("file:./mlruns")
     client = MlflowClient()
@@ -59,6 +95,8 @@ def setup_experiment(experiment_name: str) -> str:
     mlflow.set_experiment(experiment_name)
     return experiment_id
 
+
+# === Main Training Pipeline ===
 def train():
     print("Loading data...")
     df = pd.read_csv(DATA_PATH)
@@ -83,21 +121,7 @@ def train():
     except ValueError as e:
         print(f"SMOTE error: {e} - Using original data.")
 
-    models = {
-        "RandomForest": Pipeline([
-            ("scaler", StandardScaler()),
-            ("clf", RandomForestClassifier(random_state=42, class_weight='balanced'))
-        ]),
-        "SVM": Pipeline([
-            ("scaler", StandardScaler()),
-            ("clf", SVC(probability=True, class_weight='balanced', random_state=42))
-        ]),
-        "XGBoost": Pipeline([
-            ("scaler", StandardScaler()),
-            ("clf", XGBClassifier(use_label_encoder=False, eval_metric="mlogloss", random_state=42))
-        ])
-    }
-
+    models = get_models()
     best_score = 0
     best_model = None
     best_name = ""
@@ -123,7 +147,6 @@ def train():
                 best_name = name
 
     print(f"Best model: {best_name} (F1-score weighted: {best_score:.4f})")
-
     joblib.dump(best_model, os.path.join(MODEL_DIR, "price_range_model.pkl"))
 
     with open(os.path.join(MODEL_DIR, "accuracy.txt"), "w") as f:
