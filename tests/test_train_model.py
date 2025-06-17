@@ -44,11 +44,11 @@ def test_preprocess_data(sample_dataframe):
 
 
 # === Integration Test ===
-@mock.patch("train_model.pd.read_csv")
-@mock.patch("train_model.mlflow.start_run")
-@mock.patch("train_model.mlflow.set_experiment")
-@mock.patch("train_model.mlflow.log_param")
-@mock.patch("train_model.mlflow.log_metric")
+@mock.patch("src.train_model.pd.read_csv")
+@mock.patch("src.train_model.mlflow.start_run")
+@mock.patch("src.train_model.mlflow.set_experiment")
+@mock.patch("src.train_model.mlflow.log_param")
+@mock.patch("src.train_model.mlflow.log_metric")
 def test_train_function(mock_metric, mock_param, mock_experiment, mock_start_run, mock_read_csv, tmp_path):
     # Prepare fake data
     df = pd.DataFrame({
@@ -78,8 +78,8 @@ def test_train_function(mock_metric, mock_param, mock_experiment, mock_start_run
 
 
 # === Negative Test for SMOTE ===
-@mock.patch("train_model.SMOTE")
-@mock.patch("train_model.pd.read_csv")
+@mock.patch("src.train_model.SMOTE")
+@mock.patch("src.train_model.pd.read_csv")
 def test_smote_failure(mock_read_csv, mock_smote, capsys):
     df = pd.DataFrame({
         'ram': [4, 4, 4],
