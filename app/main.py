@@ -18,6 +18,12 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
+
+@app.get("/")
+def read_root():
+    return {"message": "Phone Price Prediction API is running"}
+
+
 # === Constants ===
 DATA_PATH = os.path.join("data", "raw", "train.csv")
 MODEL_DIR = "models"
