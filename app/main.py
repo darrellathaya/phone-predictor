@@ -27,13 +27,11 @@ app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 templates = Jinja2Templates(
-    directory="templates",
     env=jinja2.Environment(
         loader=jinja2.FileSystemLoader("templates"),
-        auto_reload=True  # ← This is key!
+        auto_reload=True
     )
 )
-
 MODEL_DIR = "models"
 os.makedirs(MODEL_DIR, exist_ok=True)
 DATA_PATH = os.path.join("data", "raw", "train.csv")
