@@ -8,20 +8,17 @@ from sklearn.metrics import accuracy_score, f1_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
-from sklearn.pipeline import Pipeline # Pastikan ini diimpor
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from imblearn.over_sampling import SMOTE
 import mlflow
-# from mlflow import MlflowClient # Tidak diperlukan jika hanya menggunakan set_experiment dan logging standar
 
-# === Constants ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE_DIR, "..", "data", "raw", "train.csv")
 MODEL_DIR = os.path.join(BASE_DIR, "..", "models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 EXPERIMENT_NAME = "PhonePricePrediction"
 
-# === Helper Functions ===
 def resolution_to_value(res_str: str) -> int:
     return {"720p": 720, "1080p": 1080, "2k+": 2000}.get(res_str, 720)
 
@@ -64,7 +61,7 @@ def apply_smote(X, y):
         print(f"SMOTE error: {e} - Using original data.")
         return X, y
 
-def make_pipeline_func(classifier): # Diganti nama untuk kejelasan
+def make_pipeline_func(classifier):
     return Pipeline([
         ("scaler", StandardScaler()),
         ("clf", classifier)
@@ -78,7 +75,7 @@ def get_models():
     }
 
 def train_and_evaluate(models, X_train, X_test, y_train, y_test):
-    # mlflow.set_tracking_uri("file:./mlruns") # Bisa ditambahkan jika perlu, defaultnya juga ./mlruns
+    
     mlflow.set_experiment(EXPERIMENT_NAME)
     best_overall_score = 0
     best_model_obj = None
@@ -90,7 +87,7 @@ def train_and_evaluate(models, X_train, X_test, y_train, y_test):
             print(f"Training {name}...")
             model_pipeline.fit(X_train, y_train)
             
-            model_path_pkl = os.path.join(MODEL_DIR, f"{name}.pkl") # Simpan setiap model
+            model_path_pkl = os.path.join(MODEL_DIR, f"{name}.pkl")
             joblib.dump(model_pipeline, model_path_pkl)
             print(f"Saved {name} model to {model_path_pkl}")
 
@@ -104,7 +101,6 @@ def train_and_evaluate(models, X_train, X_test, y_train, y_test):
             mlflow.log_param("model_name", name)
             mlflow.log_metric("accuracy", acc)
             mlflow.log_metric("f1_weighted", f1)
-            # mlflow.sklearn.log_model(model_pipeline, name) # Ini bisa ditambahkan jika Anda ingin log model ke artifact MLflow juga
 
             if f1 > best_overall_score:
                 best_overall_score = f1
@@ -114,7 +110,7 @@ def train_and_evaluate(models, X_train, X_test, y_train, y_test):
     return best_model_obj, best_model_overall_name, best_overall_score, model_f1_scores
 
 def save_artifacts(best_model_object, best_model_name_val, best_overall_f1_score, all_model_f1_scores, inverse_mapping_dict, df_original):
-    joblib.dump(best_model_object, os.path.join(MODEL_DIR, "price_range_model.pkl")) # Model terbaik default
+    joblib.dump(best_model_object, os.path.join(MODEL_DIR, "price_range_model.pkl"))
 
     meta = {
         "chipset_list": sorted(df_original['chipset'].dropna().unique().tolist()),

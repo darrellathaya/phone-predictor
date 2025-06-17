@@ -11,7 +11,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import make_pipeline # Diperlukan untuk get_models dan train
+from sklearn.pipeline import make_pipeline
 from imblearn.over_sampling import SMOTE
 
 import mlflow
@@ -27,13 +27,11 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# === Constants (digunakan oleh FastAPI dan fungsi train() di main.py) ===
 MODEL_DIR = "models"
 os.makedirs(MODEL_DIR, exist_ok=True)
-DATA_PATH = os.path.join("data", "raw", "train.csv") # Untuk fungsi train()
-EXPERIMENT_NAME = "PhonePricePrediction" # Untuk fungsi train()
+DATA_PATH = os.path.join("data", "raw", "train.csv")
+EXPERIMENT_NAME = "PhonePricePrediction"
 
-# === Helpers (digunakan oleh FastAPI dan fungsi train() di main.py) ===
 def resolution_to_value(res_str: str) -> int:
     return {"720p": 720, "1080p": 1080, "2k+": 2000}.get(res_str, 720)
 
@@ -52,7 +50,6 @@ def chipset_score(chipset: str) -> int:
             return score_val
     return 400
 
-# === FastAPI Endpoints ===
 @app.get("/", response_class=HTMLResponse)
 async def read_index(request: Request):
     context = {
@@ -87,7 +84,7 @@ async def read_index(request: Request):
 
     except Exception as e:
         context["error"] = f"Gagal memuat metadata awal: {str(e)}. Pastikan file 'models/meta.json' ada."
-        context["available_models"] = ["RandomForest", "SVM", "XGBoost"] # Fallback
+        context["available_models"] = ["RandomForest", "SVM", "XGBoost"]
         if context["available_models"]:
              context["selected_model_name"] = context["available_models"][0]
     return templates.TemplateResponse("index.html", context)
@@ -151,7 +148,7 @@ async def predict_price(
 
     except Exception as e:
         context["error"] = str(e)
-        if not context["chipset_list"] and not context["resolution_list"]: # Coba isi kembali untuk UI
+        if not context["chipset_list"] and not context["resolution_list"]:
             try:
                 with open(os.path.join(MODEL_DIR, "meta.json"), "r") as f_err:
                     meta_err = json.load(f_err)
@@ -164,7 +161,6 @@ async def predict_price(
     return templates.TemplateResponse("index.html", context)
 
 
-# === Bagian Training (dikembalikan dari kode awal Anda) ===
 def preprocess_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
     df['display_resolution_cat'] = df['display_resolution'].map(resolution_to_value)
     df['chipset_score'] = df['chipset'].map(chipset_score)
@@ -192,7 +188,7 @@ def get_models() -> Dict[str, object]:
         "XGBoost": make_pipeline(
             StandardScaler(),
             XGBClassifier(
-                use_label_encoder=False, # Penting untuk XGBoost versi baru
+                use_label_encoder=False,
                 eval_metric="mlogloss",
                 random_state=42
             )
@@ -200,24 +196,24 @@ def get_models() -> Dict[str, object]:
     }
 
 def setup_experiment(experiment_name: str) -> str:
-    mlflow.set_tracking_uri("file:./mlruns") # Pastikan URI relatif
+    mlflow.set_tracking_uri("file:./mlruns")
     client = MlflowClient()
     experiment = client.get_experiment_by_name(experiment_name)
     if experiment:
         print(f"Deleting old experiment: {experiment.experiment_id} (from main.py)")
         client.delete_experiment(experiment.experiment_id)
 
-    # Buat eksperimen tanpa artifact_location eksplisit agar default ke relatif
+    
     experiment_id_str = client.create_experiment(
         name=experiment_name
     )
     mlflow.set_experiment(experiment_name)
-    return experiment_id_str # Mengembalikan ID sebagai string
+    return experiment_id_str
 
 def train():
     print("Loading data (from main.py)...")
     df = pd.read_csv(DATA_PATH)
-    df_for_meta = df.copy() # Untuk daftar chipset di meta
+    df_for_meta = df.copy()
 
     print("Encoding labels (from main.py)...")
     label_mapping = {label: idx for idx, label in enumerate(df['price_range'].unique())}
@@ -239,35 +235,33 @@ def train():
     except ValueError as e:
         print(f"SMOTE error: {e} - Using original data (from main.py).")
 
-    models_dict = get_models() # Ganti nama variabel
+    models_dict = get_models()
     best_overall_f1 = 0
-    best_model_obj = None # Ganti nama variabel
-    best_model_name_str = "" # Ganti nama variabel
-    all_model_f1_scores = {} # Untuk menyimpan F1 semua model
+    best_model_obj = None
+    best_model_name_str = ""
+    all_model_f1_scores = {}
 
     print("Starting MLflow experiment (from main.py)...")
-    # setup_experiment sekarang mengembalikan string ID, tapi mlflow.start_run tidak memerlukannya jika eksperimen sudah di-set
-    exp_id = setup_experiment(EXPERIMENT_NAME) # exp_id mungkin tidak digunakan langsung di start_run
+    
+    exp_id = setup_experiment(EXPERIMENT_NAME)
 
-    for name, model_pipeline in models_dict.items(): # Ganti nama variabel
+    for name, model_pipeline in models_dict.items():
         print(f"Training {name} (from main.py)...")
-        with mlflow.start_run(run_name=name): # Berjalan di bawah eksperimen yang sudah di-set
+        with mlflow.start_run(run_name=name):
             model_pipeline.fit(X_train, y_train)
             
-            # Simpan setiap model .pkl
             joblib.dump(model_pipeline, os.path.join(MODEL_DIR, f"{name}.pkl"))
             
             preds = model_pipeline.predict(X_test)
             acc = accuracy_score(y_test, preds)
             f1 = f1_score(y_test, preds, average='weighted')
 
-            all_model_f1_scores[name] = f1 # Simpan F1 skor
+            all_model_f1_scores[name] = f1
 
             mlflow.log_param("model_name", name)
             mlflow.log_metric("accuracy", acc)
             mlflow.log_metric("f1_score_weighted", f1)
-            # Jika Anda ingin log model ke artifact MLflow juga dari sini:
-            # mlflow.sklearn.log_model(model_pipeline, name)
+            
 
             if f1 > best_overall_f1:
                 best_overall_f1 = f1
@@ -275,9 +269,9 @@ def train():
                 best_model_name_str = name
 
     print(f"Best model: {best_model_name_str} (F1-score weighted: {best_overall_f1:.4f}) (from main.py)")
-    joblib.dump(best_model_obj, os.path.join(MODEL_DIR, "price_range_model.pkl")) # Model terbaik default
+    joblib.dump(best_model_obj, os.path.join(MODEL_DIR, "price_range_model.pkl"))
 
-    # Hapus accuracy.txt jika ada, karena info ada di meta.json
+    
     accuracy_txt_file = os.path.join(MODEL_DIR, "accuracy.txt")
     if os.path.exists(accuracy_txt_file):
         os.remove(accuracy_txt_file)
@@ -290,16 +284,10 @@ def train():
         "model_f1_scores": all_model_f1_scores,
         "metric_used": "f1_score_weighted",
         "label_mapping": inverse_mapping,
-        "available_trained_models": list(models_dict.keys()) # Daftar semua model yang dilatih
+        "available_trained_models": list(models_dict.keys())
     }
 
     with open(os.path.join(MODEL_DIR, "meta.json"), "w") as f:
         json.dump(meta_content, f, indent=4)
 
     print("Training complete (from main.py)!")
-
-# Untuk menjalankan training dari main.py (opsional):
-# if __name__ == "__main__":
-#     train()
-# atau jika Anda menjalankan dengan uvicorn dan ingin train dulu:
-# train() # Panggil sebelum app = FastAPI() jika ingin train saat startup server (tidak umum)

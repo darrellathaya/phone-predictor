@@ -1,6 +1,5 @@
 import os
 import json
-# import joblib
 import pytest
 import pandas as pd
 from unittest import mock
@@ -13,7 +12,6 @@ from src.train_model import (
 )
 
 
-# === Fixtures & Setup ===
 @pytest.fixture
 def sample_dataframe():
     return pd.DataFrame({
@@ -25,7 +23,6 @@ def sample_dataframe():
     })
 
 
-# === Unit Tests for Helper Functions ===
 def test_resolution_to_value():
     assert resolution_to_value("720p") == 720
     assert resolution_to_value("1080p") == 1080
@@ -50,13 +47,13 @@ def test_preprocess_data(sample_dataframe):
     assert isinstance(y, pd.Series)
 
 
-# === Integration Test for Training Pipeline ===
+
 @mock.patch("src.train_model.pd.read_csv")
 @mock.patch("src.train_model.mlflow.start_run")
 @mock.patch("src.train_model.mlflow.set_experiment")
 @mock.patch("src.train_model.mlflow.log_param")
 @mock.patch("src.train_model.mlflow.log_metric")
-# Tambahkan mock untuk mlflow.sklearn.log_model jika digunakan di train_model.py
+
 @mock.patch("src.train_model.mlflow.sklearn.log_model")
 def test_train_function(mock_log_model, mock_log_metric, mock_log_param, mock_set_experiment, mock_start_run, mock_read_csv):
     df = pd.DataFrame({
@@ -86,30 +83,22 @@ def test_train_function(mock_log_model, mock_log_metric, mock_log_param, mock_se
     assert "model_f1_scores" in meta
 
 
-# === Negative Test for SMOTE Exception Handling ===
 @mock.patch("src.train_model.SMOTE")
 @mock.patch("src.train_model.pd.read_csv")
-# Jika train_and_evaluate atau bagian trainingnya tidak ingin dijalankan sepenuhnya setelah SMOTE error:
-# @mock.patch("src.train_model.train_and_evaluate") # Opsi untuk menghentikan lebih awal
-def test_smote_failure(mock_read_csv, mock_smote, capsys): # mock_train_evaluate opsional
-    # --- PERUBAHAN DI SINI: Pastikan data awal memiliki >1 kelas ---
+def test_smote_failure(mock_read_csv, mock_smote, capsys):
     df = pd.DataFrame({
-        'ram': [4, 6, 8, 12, 4, 6, 8, 12, 4, 6, 8, 12, 4, 6, 8, 12], # 16 sampel
+        'ram': [4, 6, 8, 12, 4, 6, 8, 12, 4, 6, 8, 12, 4, 6, 8, 12],
         'storage': [64, 128, 256, 512] * 4,
         'display_resolution': ['720p'] * 16,
         'chipset': ['snapdragon 888', 'apple a16', 'unknown', 'kirin'] * 4,
-        'price_range': (['low'] * 8) + (['medium'] * 8) # Dua kelas, masing-masing 8 sampel
+        'price_range': (['low'] * 8) + (['medium'] * 8)
     })
     # -------------------------------------------------------------
     mock_read_csv.return_value = df
     
     mock_smote_instance = mock_smote.return_value
-    # Kita buat SMOTE gagal karena alasan generik, bukan karena kekurangan kelas di input.
-    # Karena input sekarang punya >1 kelas, error "Need at least 2 classes" tidak akan terjadi di SMOTE.
     mock_smote_instance.fit_resample.side_effect = ValueError("SMOTE failed due to a test-induced generic error.")
 
-    # Jika Anda ingin menghentikan eksekusi setelah apply_smote untuk tes ini:
-    # mock_train_evaluate.return_value = (None, "", 0, {}) # Sediakan return value dummy
 
     train()
 
