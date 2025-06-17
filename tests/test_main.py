@@ -10,7 +10,7 @@ import numpy as np
 from bs4 import BeautifulSoup
 from unittest.mock import patch, Mock, MagicMock
 from fastapi.testclient import TestClient
-from sklearn
+from sklearn.ensemble import RandomForestClassifier
 from app.main import app, resolution_to_value, chipset_score, preprocess_data, get_models, setup_experiment
 
 # Silence XGBoost warning if needed
