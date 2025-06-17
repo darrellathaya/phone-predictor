@@ -61,20 +61,17 @@ def apply_smote(X, y):
         print(f"SMOTE error: {e} - Using original data.")
         return X, y
 
+def make_pipeline(classifier):
+    return Pipeline([
+        ("scaler", StandardScaler()),
+        ("clf", classifier)
+    ])
+
 def get_models():
     return {
-        "RandomForest": Pipeline([
-            ("scaler", StandardScaler()),
-            ("clf", RandomForestClassifier(random_state=42, class_weight='balanced'))
-        ]),
-        "SVM": Pipeline([
-            ("scaler", StandardScaler()),
-            ("clf", SVC(probability=True, class_weight='balanced', random_state=42))
-        ]),
-        "XGBoost": Pipeline([
-            ("scaler", StandardScaler()),
-            ("clf", XGBClassifier(eval_metric="mlogloss", random_state=42))
-        ])
+        "RandomForest": make_pipeline(RandomForestClassifier(random_state=42, class_weight='balanced')),
+        "SVM": make_pipeline(SVC(probability=True, class_weight='balanced', random_state=42)),
+        "XGBoost": make_pipeline(XGBClassifier(eval_metric="mlogloss", random_state=42))
     }
 
 def train_and_evaluate(models, X_train, X_test, y_train, y_test):
