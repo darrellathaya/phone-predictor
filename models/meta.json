@@ -163,10 +163,23 @@
         "1080p",
         "2k+"
     ],
-    "best_model": "XGBoost",
+    "best_model": "Pipeline",
+    "best_model_name": "RandomForest",
+    "best_model_overall_f1_score": 0.687150115603357,
+    "model_f1_scores": {
+        "RandomForest": 0.687150115603357,
+        "SVM": 0.5845047967158413,
+        "XGBoost": 0.6837369069324998
+    },
+    "metric_used": "f1_score_weighted",
     "label_mapping": {
         "0": "medium price",
         "1": "high price",
         "2": "low price"
-    }
+    },
+    "available_trained_models": [
+        "RandomForest",
+        "SVM",
+        "XGBoost"
+    ]
 }
