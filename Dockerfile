@@ -1,16 +1,25 @@
 FROM python:3.10
 
+# Create a non-root user
+RUN useradd -m appuser
+
+# Set working directory
 WORKDIR /app
 
-# Install dependencies
+# Copy only requirements first (to leverage Docker caching)
 COPY requirements.txt .
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy semua file ke container
-COPY . .
+# Copy only necessary files, and assign to non-root user
+COPY --chown=appuser:appuser . .
 
-# Expose port FastAPI
-EXPOSE 8000
+# Switch to non-root user
+USER appuser
 
-# Jalankan aplikasi FastAPI
+# Expose FastAPI port
+EXPOSE 8080
+
+# Run FastAPI with uvicorn
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
