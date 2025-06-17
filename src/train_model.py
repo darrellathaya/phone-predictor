@@ -60,7 +60,7 @@ def apply_smote(X, y):
         print(f"SMOTE error: {e} - Using original data.")
         return X, y
 
-def make_pipeline_func(classifier): # Renamed to avoid conflict with imported make_pipeline
+def make_pipeline_func(classifier):
     return Pipeline([
         ("scaler", StandardScaler()),
         ("clf", classifier)
@@ -74,6 +74,7 @@ def get_models():
     }
 
 def train_and_evaluate(models, X_train, X_test, y_train, y_test):
+    mlflow.set_tracking_uri("file:./mlruns")
     mlflow.set_experiment("PhonePricePrediction")
     best_overall_score = 0
     best_model_obj = None
@@ -109,14 +110,14 @@ def train_and_evaluate(models, X_train, X_test, y_train, y_test):
     return best_model_obj, best_model_overall_name, best_overall_score, model_f1_scores
 
 def save_artifacts(best_model_object, best_model_name_val, best_overall_f1_score, all_model_f1_scores, inverse_mapping_dict, df_original):
-    joblib.dump(best_model_object, os.path.join(MODEL_DIR, "price_range_model.pkl")) # Model terbaik default
+    joblib.dump(best_model_object, os.path.join(MODEL_DIR, "price_range_model.pkl"))
 
     meta = {
         "chipset_list": sorted(df_original['chipset'].dropna().unique().tolist()),
         "resolution_list": ["720p", "1080p", "2k+"],
-        "best_model_name": best_model_name_val, # Nama model dengan F1 score tertinggi
-        "best_model_overall_f1_score": best_overall_f1_score, # Skor F1 dari model terbaik
-        "model_f1_scores": all_model_f1_scores, # Dictionary skor F1 semua model
+        "best_model_name": best_model_name_val,
+        "best_model_overall_f1_score": best_overall_f1_score,
+        "model_f1_scores": all_model_f1_scores,
         "metric_used": "f1_score_weighted",
         "label_mapping": inverse_mapping_dict,
         "available_trained_models": list(get_models().keys())
@@ -124,6 +125,7 @@ def save_artifacts(best_model_object, best_model_name_val, best_overall_f1_score
 
     with open(os.path.join(MODEL_DIR, "meta.json"), "w") as f:
         json.dump(meta, f, indent=4)
+    
     accuracy_txt_path = os.path.join(MODEL_DIR, "accuracy.txt")
     if os.path.exists(accuracy_txt_path):
         os.remove(accuracy_txt_path)

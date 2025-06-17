@@ -54,10 +54,9 @@ def chipset_score(chipset: str) -> int:
 async def read_index(request: Request):
     chipset_list_val = []
     resolution_list_val = []
-    available_models_val = ["RandomForest", "SVM", "XGBoost"]
+    available_models_val = ["RandomForest", "SVM", "XGBoost"] 
     selected_model_default = available_models_val[0] if available_models_val else None
     best_model_overall_name_val = None
-    # accuracy_overall_best_model_val = None
 
     try:
         with open(os.path.join(MODEL_DIR, "meta.json"), "r") as f:
@@ -65,7 +64,7 @@ async def read_index(request: Request):
         chipset_list_val = meta.get("chipset_list", [])
         resolution_list_val = meta.get("resolution_list", [])
         available_models_val = meta.get("available_trained_models", available_models_val)
-        best_model_overall_name_val = meta.get("best_model_name") # Ambil nama model terbaik
+        best_model_overall_name_val = meta.get("best_model_name")
         
         default_selection = meta.get("best_model_name")
         if default_selection and default_selection in available_models_val:
@@ -82,7 +81,7 @@ async def read_index(request: Request):
         "resolution_list": resolution_list_val,
         "available_models": available_models_val,
         "selected_model_name": selected_model_default,
-        "best_model_overall_name": best_model_overall_name_val, # Kirim nama model terbaik
+        "best_model_overall_name": best_model_overall_name_val,
         "selected_chipset": None,
         "selected_resolution": None,
         "prediction": None,
@@ -116,7 +115,7 @@ async def predict_price(
         chipset_list_val = meta.get("chipset_list", [])
         resolution_list_val = meta.get("resolution_list", [])
         available_models_val = meta.get("available_trained_models", available_models_val)
-        best_model_overall_name_val = meta.get("best_model_name") # Ambil nama model terbaik
+        best_model_overall_name_val = meta.get("best_model_name")
 
         model_filename = f"{selected_model_name}.pkl"
         model_path = os.path.join(MODEL_DIR, model_filename)
@@ -134,15 +133,12 @@ async def predict_price(
         label_mapping = meta.get("label_mapping", {})
         prediction_result = label_mapping.get(str(prediction_idx), "Unknown")
 
-        # Ambil skor F1 dari model terbaik secara keseluruhan dari meta.json
         overall_best_f1_score = meta.get("best_model_overall_f1_score", 0)
         accuracy_overall_best_model_val = round(overall_best_f1_score * 100, 2)
         
-        # Ambil skor F1 dari model yang dipilih pengguna dari meta.json
         model_f1_scores_dict = meta.get("model_f1_scores", {})
         selected_model_f1 = model_f1_scores_dict.get(selected_model_name, 0)
         accuracy_selected_model_val = round(selected_model_f1 * 100, 2)
-
 
         return templates.TemplateResponse("index.html", {
             "request": request,
@@ -162,7 +158,6 @@ async def predict_price(
         })
 
     except Exception as e:
-        # Coba muat daftar chipset/resolusi dan model lagi untuk konsistensi UI saat error
         current_selected_model = selected_model_name if 'selected_model_name' in locals() and selected_model_name else (available_models_val[0] if available_models_val else None)
         if not meta:
             try:
@@ -234,13 +229,11 @@ def setup_experiment(experiment_name: str) -> str:
         print(f"Deleting old experiment: {experiment.experiment_id}")
         client.delete_experiment(experiment.experiment_id)
 
-    artifact_path = os.path.abspath(f"./mlruns/{experiment_name}")
-    experiment_id = client.create_experiment(
-        name=experiment_name,
-        artifact_location=f"file://{artifact_path}"
+    experiment_id_str = client.create_experiment(
+        name=experiment_name
     )
     mlflow.set_experiment(experiment_name)
-    return experiment_id
+    return experiment_id_str
 
 def train():
     print("Loading data...")
@@ -282,11 +275,14 @@ def train():
             preds = model_instance.predict(X_test)
             acc = accuracy_score(y_test, preds)
             f1 = f1_score(y_test, preds, average='weighted')
+
             model_f1_scores_for_meta[name] = f1
 
             mlflow.log_param("model_name", name)
             mlflow.log_metric("accuracy", acc)
             mlflow.log_metric("f1_score_weighted", f1)
+            
+            joblib.dump(model_instance, os.path.join(MODEL_DIR, f"{name}.pkl"))
 
             if f1 > best_score:
                 best_score = f1
@@ -295,6 +291,7 @@ def train():
 
     print(f"Best model: {best_name} (F1-score weighted: {best_score:.4f})")
     joblib.dump(best_model_obj, os.path.join(MODEL_DIR, "price_range_model.pkl"))
+    
     accuracy_txt_path = os.path.join(MODEL_DIR, "accuracy.txt")
     if os.path.exists(accuracy_txt_path):
         os.remove(accuracy_txt_path)
@@ -302,12 +299,12 @@ def train():
     meta_content = {
         "chipset_list": sorted(df['chipset'].dropna().unique().tolist()),
         "resolution_list": ["720p", "1080p", "2k+"],
-        "best_model_name": best_name, # Nama model terbaik
-        "best_model_overall_f1_score": best_score, # Skor F1 tertinggi
-        "model_f1_scores": model_f1_scores_for_meta, # Skor F1 semua model
+        "best_model_name": best_name,
+        "best_model_overall_f1_score": best_score,
+        "model_f1_scores": model_f1_scores_for_meta,
         "metric_used": "f1_score_weighted",
         "label_mapping": inverse_mapping,
-        "available_trained_models": list(models.keys()) # Daftar model yang dilatih
+        "available_trained_models": list(models.keys())
     }
 
     with open(os.path.join(MODEL_DIR, "meta.json"), "w") as f:
