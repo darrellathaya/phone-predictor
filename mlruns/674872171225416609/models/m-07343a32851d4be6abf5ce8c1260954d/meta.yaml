@@ -1,0 +1,10 @@
+artifact_location: file:///E:/CODINGAN/PSO/phone-predictor/mlruns/674872171225416609/models/m-07343a32851d4be6abf5ce8c1260954d/artifacts
+creation_timestamp: 1750162098316
+experiment_id: '674872171225416609'
+last_updated_timestamp: 1750162101648
+model_id: m-07343a32851d4be6abf5ce8c1260954d
+model_type: null
+name: SVM
+source_run_id: 94a71405c6144427b17e6faef0b39c83
+status: 2
+status_message: null

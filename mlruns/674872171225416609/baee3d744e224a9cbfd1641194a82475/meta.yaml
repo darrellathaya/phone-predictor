@@ -1,0 +1,14 @@
+artifact_uri: file:///E:/CODINGAN/PSO/phone-predictor/mlruns/674872171225416609/baee3d744e224a9cbfd1641194a82475/artifacts
+end_time: 1750162132674
+entry_point_name: ''
+experiment_id: '674872171225416609'
+lifecycle_stage: active
+run_id: baee3d744e224a9cbfd1641194a82475
+run_name: XGBoost
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1750162129368
+status: 3
+tags: []
+user_id: User

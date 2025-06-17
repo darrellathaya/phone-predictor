@@ -1,0 +1,10 @@
+artifact_location: file:///E:/CODINGAN/PSO/phone-predictor/mlruns/674872171225416609/models/m-5a42f8cf527047539a425eabb0e2e287/artifacts
+creation_timestamp: 1750161383756
+experiment_id: '674872171225416609'
+last_updated_timestamp: 1750161387452
+model_id: m-5a42f8cf527047539a425eabb0e2e287
+model_type: null
+name: XGBoost
+source_run_id: a69f34bf84e44d5bba512ce3860a8924
+status: 2
+status_message: null

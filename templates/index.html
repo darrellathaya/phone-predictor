@@ -16,13 +16,13 @@
         <div class="col-12 col-md-6">
           <label for="ram" class="form-label">RAM (MB)</label>
           <input type="range" class="form-range" id="ramRange" name="ram" min="512" max="24000" step="128" value="{{ ram or 2048 }}" />
-          <input type="number" class="form-control mt-2" id="ramInput" value="{{ ram or 2048 }}" required />
+          <input type="number" class="form-control mt-2" id="ramInput" name="ram" value="{{ ram or 2048 }}" required />
           <div class="form-text">Geser atau ketik jumlah RAM.</div>
         </div>
         <div class="col-12 col-md-6">
           <label for="storage" class="form-label">Storage (GB)</label>
           <input type="range" class="form-range" id="storageRange" name="storage" min="8" max="1000" step="8" value="{{ storage or 128 }}" />
-          <input type="number" class="form-control mt-2" id="storageInput" value="{{ storage or 128 }}" required />
+          <input type="number" class="form-control mt-2" id="storageInput" name="storage" value="{{ storage or 128 }}" required />
           <div class="form-text">Geser atau ketik jumlah penyimpanan.</div>
         </div>
         <div class="col-12 col-md-6">
@@ -45,6 +45,16 @@
           </select>
           <div class="form-text">Pilih chipset dari daftar.</div>
         </div>
+        <div class="col-12">
+          <label for="selected_model_name" class="form-label">Pilih Model</label>
+          <select class="form-select" name="selected_model_name" required>
+            <option value="" disabled {% if not selected_model_name and not available_models %}selected{% endif %}>-- Pilih Model --</option>
+            {% for model_opt in available_models %}
+            <option value="{{ model_opt }}" {% if model_opt == selected_model_name %}selected{% endif %}>{{ model_opt }}</option>
+            {% endfor %}
+          </select>
+          <div class="form-text">Pilih model yang ingin digunakan untuk prediksi.</div>
+        </div>
       </div>
       <div class="mt-4 text-center">
         <button type="submit" class="btn btn-primary w-100" id="submitBtn">Prediksi Harga</button>
@@ -55,9 +65,15 @@
     </form>
     {% if prediction %}
     <div class="alert alert-success mt-4 text-center">
+      <strong>Model Digunakan:</strong> {{ selected_model_name }}<br>
       <strong>Prediksi:</strong>
       <span class="badge bg-success fs-5">{{ prediction }}</span><br>
-      <strong>Akurasi Model:</strong> {{ accuracy }}%
+      {% if best_model_overall_name and accuracy_overall_best_model is not none %}
+      <strong>Akurasi Model Terbaik ({{ best_model_overall_name }}):</strong> {{ accuracy_overall_best_model }}%<br>
+      {% endif %}
+      {% if selected_model_name and accuracy_selected_model is not none %}
+      <strong>Akurasi Model Dipilih ({{ selected_model_name }}):</strong> {{ accuracy_selected_model }}%
+      {% endif %}
     </div>
     {% elif error %}
     <div class="alert alert-danger mt-4 text-center">
@@ -69,13 +85,31 @@
 <script>
   const ramRange = document.getElementById("ramRange");
   const ramInput = document.getElementById("ramInput");
-  ramRange.addEventListener("input", () => ramInput.value = ramRange.value);
-  ramInput.addEventListener("input", () => ramRange.value = ramInput.value);
+  ramRange.addEventListener("input", (event) => { ramInput.value = event.target.value; });
+  ramInput.addEventListener("input", (event) => { 
+      let value = parseInt(event.target.value);
+      const min = parseInt(ramRange.min);
+      const max = parseInt(ramRange.max);
+      if (value < min) value = min;
+      if (value > max) value = max;
+      ramRange.value = value; 
+      event.target.value = value;
+  });
+
 
   const storageRange = document.getElementById("storageRange");
   const storageInput = document.getElementById("storageInput");
-  storageRange.addEventListener("input", () => storageInput.value = storageRange.value);
-  storageInput.addEventListener("input", () => storageRange.value = storageInput.value);
+  storageRange.addEventListener("input", (event) => { storageInput.value = event.target.value; });
+  storageInput.addEventListener("input", (event) => { 
+      let value = parseInt(event.target.value);
+      const min = parseInt(storageRange.min);
+      const max = parseInt(storageRange.max);
+      if (value < min) value = min;
+      if (value > max) value = max;
+      storageRange.value = value; 
+      event.target.value = value;
+  });
+
 
   document.querySelector("form").addEventListener("submit", function() {
     document.getElementById("submitBtn").disabled = true;

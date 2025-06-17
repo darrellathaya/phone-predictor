@@ -1,0 +1,10 @@
+artifact_location: file:///E:/CODINGAN/PSO/phone-predictor/mlruns/674872171225416609/models/m-27433cfb0a99476995b0b1f54f0250ca/artifacts
+creation_timestamp: 1750161367383
+experiment_id: '674872171225416609'
+last_updated_timestamp: 1750161375264
+model_id: m-27433cfb0a99476995b0b1f54f0250ca
+model_type: null
+name: RandomForest
+source_run_id: 8b21e848b9b94c30a24be93bf35f4410
+status: 2
+status_message: null

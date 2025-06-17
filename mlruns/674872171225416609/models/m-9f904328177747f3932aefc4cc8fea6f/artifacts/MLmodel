@@ -1,0 +1,22 @@
+artifact_path: file:///E:/CODINGAN/PSO/phone-predictor/mlruns/674872171225416609/models/m-9f904328177747f3932aefc4cc8fea6f/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.13.4
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.6.1
+mlflow_version: 3.1.0
+model_id: m-9f904328177747f3932aefc4cc8fea6f
+model_size_bytes: 2616169
+model_uuid: m-9f904328177747f3932aefc4cc8fea6f
+prompts: null
+run_id: 875aa671457a4f79ad394f70ca20bf6c
+utc_time_created: '2025-06-17 12:08:41.089693'
