@@ -128,6 +128,14 @@ mlflow
 mlflow.set_experiment("PhonePricePrediction")
    ```
 
+NEW MODEL IMPLEMENTATION
+![image](https://github.com/user-attachments/assets/245ee94f-1068-47bd-bee6-d683f4e5b8de)
+
+   the issues above occured because the neccessary requirements was not installed. This issue can be fixed by adding the text bellow to the requirements.txt
+   ```sh
+xgboost
+   ```
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
