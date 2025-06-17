@@ -25,18 +25,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Ensure mlruns dir exists
+        run: mkdir -p mlruns
+
+      - name: Train model and log to MLflow
+        run: python train_model.py
+
       - name: Upload mlruns as artifact
         uses: actions/upload-artifact@v4
         with:
           name: mlruns
           path: mlruns/
       
-      - name: Download mlruns artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: mlruns
-          path: ./mlruns
-
       - name: Upload model files as artifact
         uses: actions/upload-artifact@v4
         with:
