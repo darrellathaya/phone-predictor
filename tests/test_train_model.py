@@ -116,5 +116,3 @@ def test_smote_failure(mock_read_csv, mock_smote, capsys): # mock_train_evaluate
     captured = capsys.readouterr()
     assert "SMOTE error" in captured.out
     assert "Using original data" in captured.out
-    # Kita tidak perlu lagi mengecek pesan error spesifik SMOTE tentang jumlah kelas,
-    # karena kita membuatnya gagal dengan ValueError generik.
