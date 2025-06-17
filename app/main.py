@@ -14,14 +14,23 @@ from sklearn.pipeline import make_pipeline
 from imblearn.over_sampling import SMOTE
 import mlflow
 from mlflow import MlflowClient
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 app = FastAPI()
 
+# Mount static file dari templates/static
+app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 
-@app.get("/")
-def read_root():
-    return {"message": "Phone Price Prediction API is running"}
+# Setup templates directory
+templates = Jinja2Templates(directory="templates")
+
+# Endpoint default untuk menampilkan index.html
+@app.get("/", response_class=HTMLResponse)
+async def read_index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 # === Constants ===
