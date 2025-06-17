@@ -6,7 +6,7 @@ import pandas as pd
 from fastapi.testclient import TestClient
 from unittest.mock import patch, mock_open, MagicMock
 
-from main import (
+from app.main import (
     app, resolution_to_value, chipset_score, preprocess_data,
     get_models, setup_experiment
 )
@@ -44,7 +44,7 @@ def test_get_models():
     assert "SVM" in models
     assert "XGBoost" in models
 
-@patch("main.MlflowClient")
+@patch("app.main.MlflowClient")
 def test_setup_experiment(mock_client_class):
     mock_client = MagicMock()
     mock_client_class.return_value = mock_client
@@ -64,8 +64,8 @@ def test_setup_experiment(mock_client_class):
     "model_f1_scores": {"RandomForest": 0.88},
     "label_mapping": {"0": "Low"}
 }))
-@patch("main.os.path.exists", return_value=True)
-@patch("main.joblib.load")
+@patch("app.main.os.path.exists", return_value=True)
+@patch("app.main.joblib.load")
 def test_post_predict(mock_joblib_load, mock_exists, mock_file):
     mock_model = MagicMock()
     mock_model.predict.return_value = [0]
