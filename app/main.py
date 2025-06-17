@@ -30,15 +30,32 @@ templates = Jinja2Templates(directory="templates")
 # Endpoint default untuk menampilkan index.html
 @app.get("/", response_class=HTMLResponse)
 async def read_index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    try:
+        # Baca metadata dari hasil training
+        with open(os.path.join("models", "meta.json"), "r") as f:
+            meta = json.load(f)
+        chipset_list = meta.get("chipset_list", [])
+        resolution_list = meta.get("resolution_list", [])
+    except Exception as e:
+        chipset_list = []
+        resolution_list = []
 
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "chipset_list": chipset_list,
+        "resolution_list": resolution_list,
+        "selected_chipset": None,
+        "selected_resolution": None,
+        "prediction": None,
+        "accuracy": None,
+        "error": None
+    })
 
 # === Constants ===
 DATA_PATH = os.path.join("data", "raw", "train.csv")
 MODEL_DIR = "models"
 EXPERIMENT_NAME = "PhonePricePrediction"
 os.makedirs(MODEL_DIR, exist_ok=True)
-
 
 # === Helpers ===
 def resolution_to_value(res_str: str) -> int:
@@ -63,7 +80,6 @@ def preprocess_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
     df['display_resolution_cat'] = df['display_resolution'].map(resolution_to_value)
     df['chipset_score'] = df['chipset'].map(chipset_score)
     return df[['ram', 'storage', 'display_resolution_cat', 'chipset_score']], df['price_range']
-
 
 # === Model Factory ===
 def get_models() -> Dict[str, object]:
@@ -95,7 +111,6 @@ def get_models() -> Dict[str, object]:
         )
     }
 
-
 # === MLflow Setup ===
 def setup_experiment(experiment_name: str) -> str:
     mlflow.set_tracking_uri("file:./mlruns")
@@ -112,7 +127,6 @@ def setup_experiment(experiment_name: str) -> str:
     )
     mlflow.set_experiment(experiment_name)
     return experiment_id
-
 
 # === Main Training Pipeline ===
 def train():
