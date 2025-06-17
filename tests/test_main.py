@@ -61,7 +61,7 @@ def test_post_predict_success(tmp_path):
 
     from sklearn.ensemble import RandomForestClassifier
     dummy_model = RandomForestClassifier()
-    dummy_model.fit([[1]][[1]][[1]][[1]], [1])  # Corrected line
+    dummy_model.fit([[1]], [1])  # Corrected line
 
     joblib.dump(dummy_model, "models/RandomForest.pkl")
 
