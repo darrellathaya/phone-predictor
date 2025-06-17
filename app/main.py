@@ -86,7 +86,11 @@ async def read_index(request: Request):
         if context["available_models"]:
             context["selected_model_name"] = context["available_models"][0]
 
-    return templates.TemplateResponse(request=request, name="index.html", context=context)
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context=context
+    )
 
 @app.post("/", response_class=HTMLResponse)
 async def predict_price(
@@ -153,7 +157,11 @@ async def predict_price(
         except Exception:
             context["available_models"] = ["RandomForest", "SVM", "XGBoost"]
 
-    return templates.TemplateResponse(request=request, name="index.html", context=context)
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context=context
+    )
 
 
 def preprocess_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:

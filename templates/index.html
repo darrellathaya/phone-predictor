@@ -67,7 +67,9 @@
     <div class="alert alert-success mt-4 text-center">
       <strong>Model Digunakan:</strong> {{ selected_model_name }}<br>
       <strong>Prediksi:</strong>
-      <span class="badge bg-success fs-5">{{ prediction }}</span><br>
+      <h5 class="card-title text-center">
+        <span class="badge bg-success fs-5">{{ prediction }}</span>
+      </h5>
       {% if best_model_overall_name and accuracy_overall_best_model is not none %}
       <strong>Akurasi Model Terbaik ({{ best_model_overall_name }}):</strong> {{ accuracy_overall_best_model }}%<br>
       {% endif %}
