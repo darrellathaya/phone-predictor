@@ -14,6 +14,10 @@ from sklearn.pipeline import make_pipeline
 from imblearn.over_sampling import SMOTE
 import mlflow
 from mlflow import MlflowClient
+from fastapi import FastAPI
+
+app = FastAPI()
+
 
 # === Constants ===
 DATA_PATH = os.path.join("data", "raw", "train.csv")
