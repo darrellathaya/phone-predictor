@@ -50,7 +50,7 @@ These instructions will help you set up the project locally and run it manually.
 
 <!-- PREREQUISITES -->
 ### Prerequisites
-1. Register & Login to SonarQube Cloud
+1. SonarQube
    ```sh
    a. Create a new organization
    b. Create a new project by linking it to your Github Repository
