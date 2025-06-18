@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 from unittest.mock import patch, Mock, MagicMock
 from fastapi.testclient import TestClient
 from sklearn.ensemble import RandomForestClassifier
-from app.main import app, resolution_to_value, chipset_score, preprocess_data, get_models, setup_experiment, MODEL_DIR
+from app.main import app, resolution_to_value, chipset_score, preprocess_data, get_models, setup_experiment, train, MODEL_DIR
 
 # Silence XGBoost warning if needed
 warnings.filterwarnings("ignore", category=UserWarning, module="xgboost")
