@@ -71,7 +71,6 @@ def get_models():
     return {
         "RandomForest": make_pipeline_func(RandomForestClassifier(random_state=42, class_weight='balanced')),
         "SVM": make_pipeline_func(SVC(probability=True, class_weight='balanced', random_state=42)),
-        "XGBoost": make_pipeline_func(XGBClassifier(eval_metric="mlogloss", random_state=42, use_label_encoder=False))
     }
 
 def train_and_evaluate(models, X_train, X_test, y_train, y_test):

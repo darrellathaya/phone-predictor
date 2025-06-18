@@ -88,7 +88,7 @@ async def read_index(request: Request):
             context["selected_model_name"] = context["available_models"][0]
     except Exception as e:
         context["error"] = "Gagal memuat metadata awal"
-        context["available_models"] = ["RandomForest", "SVM", "XGBoost"]
+        context["available_models"] = ["RandomForest", "SVM"]
         if context["available_models"]:
             context["selected_model_name"] = context["available_models"][0]
 
@@ -161,7 +161,7 @@ async def predict_price(
             context["available_models"] = meta_err.get("available_trained_models", ["RandomForest", "SVM", "XGBoost"])
             context["best_model_overall_name"] = meta_err.get("best_model_name")
         except Exception:
-            context["available_models"] = ["RandomForest", "SVM", "XGBoost"]
+            context["available_models"] = ["RandomForest", "SVM"]
 
     return templates.TemplateResponse(
         request=request,
@@ -194,14 +194,6 @@ def get_models() -> Dict[str, object]:
                 random_state=42
             )
         ),
-        "XGBoost": make_pipeline(
-            StandardScaler(),
-            XGBClassifier(
-                use_label_encoder=False,
-                eval_metric="mlogloss",
-                random_state=42
-            )
-        )
     }
 
 def setup_experiment(experiment_name: str) -> str:
