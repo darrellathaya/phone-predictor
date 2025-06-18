@@ -29,7 +29,8 @@ app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 templates = Jinja2Templates(
     env=jinja2.Environment(
         loader=jinja2.FileSystemLoader("templates"),
-        auto_reload=True
+        auto_reload=True, 
+        autoescape=jinja2.select_autoescape(["html", "xml"])  
     )
 )
 MODEL_DIR = "models"
