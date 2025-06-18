@@ -67,19 +67,20 @@ These instructions will help you set up the project locally and run it manually.
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-1. Train the model locally
+1. Local
+   a. Train the model locally
    ```sh
    python src/model.py
    ```
 
-2. Running the web app locally
+   b. Running the web app locally
    ```sh
    uvicorn app.main:app --reload
    ```
 
-3. Run via Railway
+2. Run with CI/CD
    ```sh
-   a. Add new data into train.csv
+   a. Add new data into train.csv / Add new model
 
    b. Push the changes into your Github Repository
 
