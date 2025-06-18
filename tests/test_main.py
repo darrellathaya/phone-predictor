@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 from unittest.mock import patch, Mock, MagicMock
 from fastapi.testclient import TestClient
 from sklearn.ensemble import RandomForestClassifier
-from app.main import app, resolution_to_value, chipset_score, preprocess_data, get_models, setup_experiment
+from app.main import app, resolution_to_value, chipset_score, preprocess_data, get_models, setup_experiment, MODEL_DIR
 
 # Silence XGBoost warning if needed
 warnings.filterwarnings("ignore", category=UserWarning, module="xgboost")
@@ -160,6 +160,48 @@ def test_setup_experiment(mock_mlflow):
     result = setup_experiment("TestExperiment")
     assert mock_client.create_experiment.called
 
+# -----------------------
+# Train() Coverage Test
+# -----------------------
 
-# Optional: Test `train()` if you want full end-to-end ML test
-# You can call app.main.train() in a temp folder and check files.
+@pytest.fixture
+def sample_training_data(tmp_path):
+    df = pd.DataFrame({
+        "chipset": ["Snapdragon 888"] * 20,
+        "resolution": ["1080p"] * 20,
+        "price_range": ["Low"] * 10 + ["Mid"] * 5 + ["High"] * 5,
+        "cores": [4]*20,
+        "memory": [4]*20,
+        "battery": [3000]*20,
+        "clock_speed": [2.0]*20
+    })
+    data_path = tmp_path / "data.csv"
+    df.to_csv(data_path, index=False)
+
+    os.environ["DATA_PATH"] = str(data_path)
+
+    model_dir = tmp_path / "models"
+    model_dir.mkdir(parents=True, exist_ok=True)
+    os.environ["MODEL_DIR"] = str(model_dir)
+
+    yield tmp_path
+
+    shutil.rmtree(tmp_path)
+
+@patch("app.main.mlflow.start_run")
+@patch("app.main.mlflow.log_param")
+@patch("app.main.mlflow.log_metric")
+@patch("app.main.setup_experiment", return_value="test_exp_id")
+@patch("app.main.joblib.dump")
+def test_train_function_executes_to_end(
+    mock_dump,
+    mock_setup_experiment,
+    mock_log_metric,
+    mock_log_param,
+    mock_start_run,
+    sample_training_data,
+    capsys
+):
+    train()
+    captured = capsys.readouterr()
+    assert "Training complete (from main.py)!" in captured.out
