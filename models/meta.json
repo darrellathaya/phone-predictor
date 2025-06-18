@@ -167,7 +167,8 @@
     "best_model_overall_f1_score": 0.687150115603357,
     "model_f1_scores": {
         "RandomForest": 0.687150115603357,
-        "SVM": 0.5845047967158413
+        "SVM": 0.5845047967158413,
+        "XGBoost": 0.6837369069324998
     },
     "metric_used": "f1_score_weighted",
     "label_mapping": {
@@ -177,6 +178,7 @@
     },
     "available_trained_models": [
         "RandomForest",
-        "SVM"
+        "SVM",
+        "XGBoost"
     ]
 }
