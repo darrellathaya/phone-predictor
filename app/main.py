@@ -9,6 +9,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
+from xgboost import XGBClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline # Diperlukan untuk get_models dan train
 from imblearn.over_sampling import SMOTE
@@ -86,7 +87,7 @@ async def read_index(request: Request):
 
     except Exception as e:
         context["error"] = f"Gagal memuat metadata awal: {str(e)}. Pastikan file 'models/meta.json' ada."
-        context["available_models"] = ["RandomForest", "SVM"] # Fallback
+        context["available_models"] = ["RandomForest", "SVM", "XGBoost"] # Fallback
         if context["available_models"]:
              context["selected_model_name"] = context["available_models"][0]
     return templates.TemplateResponse("index.html", context)
@@ -122,7 +123,7 @@ async def predict_price(
         
         context["chipset_list"] = meta.get("chipset_list", [])
         context["resolution_list"] = meta.get("resolution_list", [])
-        context["available_models"] = meta.get("available_trained_models", ["RandomForest", "SVM"])
+        context["available_models"] = meta.get("available_trained_models", ["RandomForest", "SVM", "XGBoost"])
         context["best_model_overall_name"] = meta.get("best_model_name", "N/A")
 
         model_filename = f"{selected_model_name}.pkl"
@@ -156,10 +157,10 @@ async def predict_price(
                     meta_err = json.load(f_err)
                 context["chipset_list"] = meta_err.get("chipset_list", [])
                 context["resolution_list"] = meta_err.get("resolution_list", [])
-                context["available_models"] = meta_err.get("available_trained_models", ["RandomForest", "SVM"])
+                context["available_models"] = meta_err.get("available_trained_models", ["RandomForest", "SVM", "XGBoost"])
                 context["best_model_overall_name"] = meta_err.get("best_model_name")
             except Exception: 
-                context["available_models"] = ["RandomForest", "SVM"]
+                context["available_models"] = ["RandomForest", "SVM", "XGBoost"]
     return templates.TemplateResponse("index.html", context)
 
 
@@ -185,6 +186,14 @@ def get_models() -> Dict[str, object]:
             SVC(
                 probability=True,
                 class_weight='balanced',
+                random_state=42
+            )
+        ),
+        "XGBoost": make_pipeline(
+            StandardScaler(),
+            XGBClassifier(
+                use_label_encoder=False, # Penting untuk XGBoost versi baru
+                eval_metric="mlogloss",
                 random_state=42
             )
         )
