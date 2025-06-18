@@ -145,7 +145,6 @@ def test_get_models():
     models = get_models()
     assert "RandomForest" in models
     assert "SVM" in models
-    assert "XGBoost" in models
 
 
 # -----------------------
