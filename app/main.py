@@ -129,8 +129,8 @@ async def predict_price(
             meta = json.load(f)
         context["chipset_list"] = meta.get("chipset_list", [])
         context["resolution_list"] = meta.get("resolution_list", [])
-        context["available_models"] = meta.get("available_trained_models", ["RandomForest", "SVM"])
-        context["best_model_overall_name"] = meta.get("best_model_name", "N/A") 
+        context["available_models"] = meta.get("available_trained_models", ["RandomForest", "SVM", "XGBoost"])
+        context["best_model_overall_name"] = meta.get("best_model_name", "N/A")
 
         model_filename = f"{selected_model_name}.pkl"
         model_path = os.path.join(MODEL_DIR, model_filename)
@@ -158,10 +158,10 @@ async def predict_price(
                 meta_err = json.load(f_err)
             context["chipset_list"] = meta_err.get("chipset_list", [])
             context["resolution_list"] = meta_err.get("resolution_list", [])
-            context["available_models"] = meta_err.get("available_trained_models", ["RandomForest", "SVM"])
+            context["available_models"] = meta_err.get("available_trained_models", ["RandomForest", "SVM", "XGBoost"])
             context["best_model_overall_name"] = meta_err.get("best_model_name")
         except Exception:
-            context["available_models"] = ["RandomForest", "SVM"]
+            context["available_models"] = ["RandomForest", "SVM", "XGBoost"]
 
     return templates.TemplateResponse(
         request=request,
@@ -194,6 +194,14 @@ def get_models() -> Dict[str, object]:
                 random_state=42
             )
         ),
+        "XGBoost": make_pipeline(
+            StandardScaler(),
+            XGBClassifier(
+                use_label_encoder=False,
+                eval_metric="mlogloss",
+                random_state=42
+            )
+        )
     }
 
 def setup_experiment(experiment_name: str) -> str:
